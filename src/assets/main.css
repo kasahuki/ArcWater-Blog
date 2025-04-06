@@ -1,0 +1,111 @@
+a {
+  text-decoration: none;
+  color: #0066cc; /* 苹果风格的链接颜色 */
+  transition: color 0.3s ease;
+}
+
+a:hover {
+  color: #004499;
+}
+
+.appleFont {
+   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* 使用系统字体，确保页面加载速度快并符合苹果设备的本地字体风格 */
+  font-weight: 600;
+  /* 微妙的加粗 */
+  font-size: 1.2rem;
+  /* 增加字体大小 */
+  color: #333;
+  /* 深灰色，保持简洁优雅 */
+  letter-spacing: 0.5px;
+  /* 增加字母间距，使字体更有空间感 */
+  text-transform: uppercase;
+  /* 大写字母，使其更加现代感 */
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  /* 轻微的阴影效果，增加深度感 */
+  transition: transform 0.3s ease-in-out, color 0.3s ease;
+}
+
+.ArcTitle {
+ 
+  font-weight: 900;
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(90deg, #FFD700, #1E90FF); /* 黄色 -> 蓝色 */
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+
+  /* 添加一些文字阴影使渐变更立体 */
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.25),
+    0 4px 6px rgba(30, 144, 255, 0.4);
+
+  letter-spacing: 2px;
+  text-align: center;
+
+}
+
+.GlodenTitle {
+ 
+    font-size: 64px;
+    font-weight: 900;
+    text-align: center;
+    font-family: 'Georgia', serif;
+  
+    /* 金色渐变 + 光泽 */
+    background: linear-gradient(
+      to top,
+      #b8860b 0%,   /* 暗金 */
+      #ffd700 30%,  /* 金黄 */
+      #fff8dc 50%,  /* 米白高光 */
+      #ffd700 70%,  /* 金黄 */
+      #b8860b 100%  /* 暗金 */
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  
+    /* 多重阴影打造立体感 */
+    text-shadow:
+      1px 1px 1px #b8860b,
+      2px 2px 2px #c0a000,
+      3px 3px 3px #8b7500,
+      4px 4px 4px rgba(0,0,0,0.25);
+  
+    letter-spacing: 2px;
+  
+  
+}
+
+.WaterTitle {
+
+    font-size: 60px;
+    font-weight: 800;
+    font-family: 'SF Pro Display', 'Segoe UI', 'Helvetica Neue', sans-serif;
+    text-align: center;
+    letter-spacing: 2px;
+  
+    /* 海浪渐变色（青绿 + 天蓝 + 海泡） */
+    background: linear-gradient(
+      145deg,
+      #007ba7 0%,
+      #00c9c8 30%,
+      #e0ffff 50%,
+      #00c9c8 70%,
+      #007ba7 100%
+    );
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  
+    /* 高光和立体感 */
+    text-shadow:
+      0 1px 1px rgba(255, 255, 255, 0.3),
+      0 3px 6px rgba(0, 128, 128, 0.5),
+      0 5px 10px rgba(0, 0, 0, 0.2);
+  
+    /* 柔和动画增强 Apple 风格 */
+    animation: oceanShine 6s ease-in-out infinite;
+  
+  
+}
+
+
