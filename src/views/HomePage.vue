@@ -107,6 +107,17 @@
 
     <div class="WaterTitle" style="font-size: 3rem;margin-bottom: 4rem;">HOUSE DOCTOR</div>
 
+    <div style="background-color: black;padding: 2.5rem; border-radius: 2rem;margin-bottom: 5rem;position: relative;">
+      <span class="appleFont" style="color: white; font-size: 2rem;">home free </span>
+      <FloatCards>
+
+      </FloatCards>
+      <div class="appleFont" style="color: white;  position: absolute;right: 2rem;bottom: 2rem;  ">
+        <WhiteButton style="width: 15rem;" content="Get Started" class="appleFont"></WhiteButton>
+      </div>
+    </div>
+
+
 
 
 
@@ -115,6 +126,7 @@
 </template>
 
 <script setup>
+import FloatCards from '../components/FloatCards.vue'
 import { ref, onMounted } from 'vue'
 import WhiteButton from '../components/WhiteButton.vue'
 import Notice from '../components/NoticeComponent.vue'
@@ -122,6 +134,7 @@ import MusicBox from '@/components/MusicBox.vue'
 import HomeCover from '@/components/HomeCover.vue'
 
 import { Document, DataLine, Brush, Cellphone, ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
+import FloatCardsVue from '@/components/FloatCards.vue'
 
 // 模拟数据
 const featuredArticles = ref([

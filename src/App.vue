@@ -7,11 +7,7 @@
 
     <!-- 主要内容区域 -->
     <el-main class="main-content">
-      <router-view v-slot="{ Component }">
-        <transition name="fade" mode="out-in">
-          <component :is="Component" />
-        </transition>
-      </router-view>
+      <router-view />
     </el-main>
 
     <!-- 页脚 -->
@@ -75,17 +71,6 @@ body {
   background-color: #fff;
   border-top: 1px solid var(--border-color);
   padding: 20px 0;
-}
-
-/* 过渡动画 */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
 }
 
 /* 全局卡片样式 */

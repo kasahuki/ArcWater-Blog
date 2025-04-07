@@ -238,9 +238,28 @@ const isDarkMode = computed(() => {
   max-width: 1000px;
   margin: 0 auto 50px;
   padding: 30px;
-  background-color: #fff;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-  border-radius: 10px;
+  background: rgba(2, 49, 77, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  position: relative;
+  overflow: hidden;
+}
+
+/* 添加渐变背景 */
+.resume-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.15) 0%,
+      rgba(255, 255, 255, 0.1) 100%);
+  z-index: -1;
 }
 
 .resume-header {
@@ -249,7 +268,7 @@ const isDarkMode = computed(() => {
   align-items: center;
   margin-bottom: 30px;
   padding-bottom: 20px;
-  border-bottom: 1px solid #eaeaea;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .header-left {
@@ -259,20 +278,25 @@ const isDarkMode = computed(() => {
 .name {
   font-size: 2.5rem;
   margin-bottom: 10px;
-  color: #333;
+  color: #ffffff;
   font-weight: 600;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  letter-spacing: 0.5px;
 }
 
 .title {
   font-size: 1.5rem;
-  color: #409eff;
+  color: #4d99ff;
   margin-bottom: 10px;
   font-weight: 500;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  letter-spacing: 0.3px;
 }
 
 .slogan {
-  color: #666;
+  color: rgba(255, 255, 255, 0.95);
   font-size: 1rem;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .header-right {
@@ -284,8 +308,10 @@ const isDarkMode = computed(() => {
   height: 150px;
   overflow: hidden;
   border-radius: 50%;
-  border: 4px solid #f0f0f0;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .avatar {
@@ -304,20 +330,23 @@ const isDarkMode = computed(() => {
   align-items: center;
   margin-bottom: 20px;
   padding-bottom: 10px;
-  border-bottom: 1px solid #eaeaea;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .section-title .el-icon {
   font-size: 1.5rem;
   margin-right: 10px;
-  color: #409eff;
+  color: #4d99ff;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
 
 .section-title h2 {
   font-size: 1.5rem;
-  color: #333;
+  color: #ffffff;
   margin: 0;
   font-weight: 600;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  letter-spacing: 0.3px;
 }
 
 .basic-info {
@@ -329,11 +358,14 @@ const isDarkMode = computed(() => {
 .info-item {
   display: flex;
   align-items: center;
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .info-item .el-icon {
   margin-right: 10px;
-  color: #409eff;
+  color: #4d99ff;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
 
 .education-item,
@@ -355,20 +387,24 @@ const isDarkMode = computed(() => {
 .proj-name {
   font-size: 1.2rem;
   font-weight: 600;
-  color: #333;
+  color: #ffffff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  letter-spacing: 0.2px;
 }
 
 .edu-time,
 .exp-time,
 .proj-time {
-  color: #666;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .exp-position {
   font-size: 1.1rem;
-  color: #409eff;
+  color: #4d99ff;
   margin-bottom: 10px;
   font-weight: 500;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .exp-desc ul,
@@ -380,6 +416,8 @@ const isDarkMode = computed(() => {
 .proj-desc li {
   margin-bottom: 5px;
   line-height: 1.6;
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .skills-container {
@@ -425,22 +463,28 @@ const isDarkMode = computed(() => {
 .award-item {
   display: flex;
   align-items: center;
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .award-time {
   width: 70px;
   margin-right: 20px;
-  color: #666;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .award-name {
   font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .self-evaluation p {
   margin-bottom: 10px;
   line-height: 1.8;
   text-align: justify;
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 /* 暗黑模式适配 */
@@ -487,7 +531,13 @@ const isDarkMode = computed(() => {
   border-bottom-color: #3a3a3a;
 }
 
+/* 响应式设计 */
 @media (max-width: 768px) {
+  .resume-container {
+    padding: 20px;
+    margin: 20px;
+  }
+
   .resume-header {
     flex-direction: column;
     text-align: center;
@@ -499,6 +549,19 @@ const isDarkMode = computed(() => {
 
   .header-right {
     margin-left: 0;
+  }
+
+  .name {
+    font-size: 2rem;
+  }
+
+  .title {
+    font-size: 1.2rem;
+  }
+
+  .avatar-container {
+    width: 120px;
+    height: 120px;
   }
 
   .skills-container,
@@ -519,5 +582,48 @@ const isDarkMode = computed(() => {
   .skill-level {
     align-self: flex-end;
   }
+}
+
+@media (max-width: 480px) {
+  .resume-container {
+    padding: 15px;
+    margin: 15px;
+  }
+
+  .name {
+    font-size: 1.8rem;
+  }
+
+  .title {
+    font-size: 1.1rem;
+  }
+
+  .avatar-container {
+    width: 100px;
+    height: 100px;
+  }
+
+  .section-title h2 {
+    font-size: 1.3rem;
+  }
+}
+
+/* 添加滚动条样式 */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4);
 }
 </style>
