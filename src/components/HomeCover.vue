@@ -120,6 +120,8 @@ onUnmounted(() => {
   font-family: 'Poppins', sans-serif;
   color: #fff;
   border-radius: 1.5rem;
+  margin-bottom: 2.5rem;
+
 
 }
 

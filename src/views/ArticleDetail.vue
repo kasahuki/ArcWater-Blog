@@ -107,9 +107,10 @@
             <div class="author-profile">
               <el-avatar :size="60" src="https://placeholder.com/60x60" />
               <h4>senjay</h4>
-              <p>github icon</p>
-              <el-button type="primary" plain size="small" @click="$router.push({ name: 'About' })">Follow
-                me</el-button>
+              <IconBar></IconBar>
+              <el-button type="primary" plain size="big" @click="$router.push({ name: 'About' })">
+                <span>Follow Me</span>
+              </el-button>
             </div>
           </div>
 
@@ -147,7 +148,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { Share } from '@element-plus/icons-vue'
-
+import IconBar from '../components/IconBar.vue'
 const route = useRoute()
 const articleId = ref(route.params.id || 1)
 // 接收路由过来的id
