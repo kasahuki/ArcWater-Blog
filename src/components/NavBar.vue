@@ -9,16 +9,20 @@
 
     <el-menu :default-active="activeIndex" mode="horizontal" router class="nav-menu appleFont"
       background-color="#ffffff" text-color="#333" active-text-color="#409EFF">
+
       <el-menu-item index="/">Home</el-menu-item>
+
       <el-sub-menu index="categories">
         <template #title>Category</template>
-        <el-menu-item index="/category/frontend">前端开发</el-menu-item>
-        <el-menu-item index="/category/backend">后端技术</el-menu-item>
-        <el-menu-item index="/category/uiux">UI/UX设计</el-menu-item>
-        <el-menu-item index="/category/mobile">移动开发</el-menu-item>
+        <el-menu-item v-for="item in categories" :key="item.id" :index="`/category/${item.id}`">
+          {{ item.categoryName }}
+        </el-menu-item>
       </el-sub-menu>
+
       <el-menu-item index="/about">About</el-menu-item>
     </el-menu>
+
+
 
     <div class="theme-switch">
       <el-button circle class="theme-toggle-btn" @click="toggleTheme" :title="isDarkMode ? '切换到日间模式' : '切换到夜间模式'">
@@ -50,7 +54,8 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { Search, Moon, Sunny } from '@element-plus/icons-vue'
-
+import { categoryListService } from '@/api/category'
+import { getCategories } from '@/util/common'
 const route = useRoute()
 const searchQuery = ref('')
 const isDarkMode = ref(false)
@@ -93,6 +98,13 @@ const handleSearch = () => {
     // router.push({ path: '/search', query: { q: searchQuery.value } })
   }
 }
+// 类别数据
+const categories = ref([])
+const loadCategories = async () => {
+  categories.value = await getCategories()
+}
+
+loadCategories()
 </script>
 
 <style scoped>

@@ -17,16 +17,7 @@
         </div>
       </div>
 
-      <div class="footer-section links">
-        <h3>Link To</h3>
-        <ul>
-          <li><router-link to="/">Homepage</router-link></li>
-          <li><router-link to="/category/frontend">Frontend</router-link></li>
-          <li><router-link to="/category/backend">Backend</router-link></li>
-          <li><router-link to="/category/uiux">UI/UX</router-link></li>
-          <li><router-link to="/about">About</router-link></li>
-        </ul>
-      </div>
+
 
       <div class="footer-section contact">
         <h3>Contact me</h3>
@@ -76,8 +67,14 @@ const email = ref('')
 
 <style scoped>
 .footer-container {
-  background-color: #fff;
+  background: rgba(28, 35, 65, 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
   padding: 20px;
+  color: rgba(255, 255, 255, 0.9);
+  position: relative;
+  z-index: 1;
 }
 
 .footer-content {
@@ -94,6 +91,8 @@ const email = ref('')
   margin-bottom: 15px;
   position: relative;
   padding-bottom: 10px;
+  color: #fff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .footer-section h3::after {
@@ -103,12 +102,14 @@ const email = ref('')
   bottom: 0;
   width: 50px;
   height: 2px;
-  background-image: var(--primary-gradient);
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
 }
 
 .about p {
   margin-bottom: 15px;
-  color: var(--light-text);
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.6;
 }
 
 .social-links {
@@ -123,14 +124,18 @@ const email = ref('')
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background-color: #f5f5f5;
-  color: var(--light-text);
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.9);
   transition: all 0.3s ease;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .social-link:hover {
-  background-image: var(--primary-gradient);
-  color: white;
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
 .links ul {
@@ -144,28 +149,53 @@ const email = ref('')
 
 .links a {
   text-decoration: none;
-  color: var(--light-text);
+  color: rgba(255, 255, 255, 0.8);
   transition: color 0.3s ease;
 }
 
 .links a:hover {
-  color: #1890ff;
+  color: #fff;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
 }
 
 .contact p {
   display: flex;
   align-items: center;
   margin-bottom: 10px;
-  color: var(--light-text);
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .contact .el-icon {
   margin-right: 10px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.contact a {
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  transition: all 0.3s ease;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  margin-top: 10px;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+.contact a:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.contact svg path {
+  fill: rgba(255, 255, 255, 0.9);
 }
 
 .newsletter p {
   margin-bottom: 15px;
-  color: var(--light-text);
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .newsletter-form {
@@ -173,10 +203,44 @@ const email = ref('')
   gap: 10px;
 }
 
+:deep(.el-input__wrapper) {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+:deep(.el-input__wrapper:hover) {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+:deep(.el-input__inner) {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+:deep(.el-input__inner::placeholder) {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+:deep(.el-button) {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+:deep(.el-button:hover) {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
 .footer-bottom {
   text-align: center;
   padding-top: 20px;
-  border-top: 1px solid var(--border-color);
-  color: var(--lighter-text);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
 }
 </style>

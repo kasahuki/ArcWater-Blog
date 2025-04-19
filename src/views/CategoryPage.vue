@@ -1,309 +1,788 @@
 <template>
-  <div class="category-page">
-    <!-- 分类标题 -->
-    <div class="category-header gradient-bg">
-      <div class="category-icon">
-        <el-icon size="32">
-          <component :is="categoryIcon" />
-        </el-icon>
-      </div>
-      <div class="category-info">
-        <h1>{{ categoryTitle }}</h1>
-        <p>{{ categoryDescription }}</p>
-      </div>
-    </div>
+  <div class="app-container">
+    <!-- 主容器 -->
+    <div class="main-layout">
+      <!-- 侧边栏 -->
+      <div class="sidebar glass-panel" :class="{ 'collapsed': sidebarCollapsed }">
+        <div class="sidebar-content" v-if="!sidebarCollapsed" @click.stop>
+          <div class="sidebar-header">
+            <div class="app-logo">
+              <el-icon style="margin-right: 5px; vertical-align: middle;">
+                <Timer />
+              </el-icon>
+            </div>
+          </div>
 
-    <!-- 筛选选项 -->
-    <div class="filter-container">
-      <div class="filter-label">排序方式：</div>
-      <el-radio-group v-model="sortBy" size="small">
-        <el-radio-button label="latest">最新发布</el-radio-button>
-        <el-radio-button label="popular">热门文章</el-radio-button>
-      </el-radio-group>
-
-      <div class="filter-tabs">
-        <el-tabs v-model="activeTab">
-          <el-tab-pane label="全部" name="all"></el-tab-pane>
-          <el-tab-pane label="CSS" name="css"></el-tab-pane>
-          <el-tab-pane label="JavaScript" name="javascript"></el-tab-pane>
-          <el-tab-pane label="HTML" name="html"></el-tab-pane>
-          <el-tab-pane label="React" name="react"></el-tab-pane>
-        </el-tabs>
-      </div>
-    </div>
-
-    <!-- 文章列表 -->
-    <div class="articles-container">
-      <el-row :gutter="20">
-        <el-col :xs="24" :sm="12" v-for="article in filteredArticles" :key="article.id">
-          <router-link :to="`/article/${article.id}`">
-            <!-- // 交给路由处理 并且携带参数 由路由转发到对应的组件vue -->
-            <el-card class="article-card" shadow="hover">
-              <div class="article-content">
-                <img :src="article.image" class="article-image" alt="文章图片" />
-                <div class="article-details">
-                  <div class="article-meta">
-                    <span class="article-tag">{{ article.tag }}</span>
-                  </div>
-                  <h3 class="article-title">{{ article.title }}</h3>
-                  <p class="article-desc">{{ article.description }}</p>
-                  <div class="article-footer">
-                    <span class="article-date">{{ article.date }}</span>
-                    <span class="article-views">{{ article.views }}次阅读</span>
+          <el-scrollbar height="calc(100vh - 180px)">
+            <el-collapse v-model="activeYears" accordion class="year-collapse">
+              <el-collapse-item v-for="year in years" :key="year.value" :title="year.label" :name="year.value">
+                <div class="month-list">
+                  <div v-for="month in year.months" :key="`${year.value}-${month.value}`" class="month-item"
+                    :class="{ 'active': isMonthActive(year.value, month.value) }"
+                    @click="selectMonth(year.value, month.value)">
+                    <span>{{ month.label }}</span>
+                    <span class="article-count">{{ month.count }}</span>
                   </div>
                 </div>
-              </div>
-            </el-card>
-          </router-link>
-        </el-col>
-      </el-row>
+              </el-collapse-item>
+            </el-collapse>
+          </el-scrollbar>
 
-      <!-- 分页 -->
-      <div class="pagination-container">
-        <el-pagination background layout="prev, pager, next" :total="100" :page-size="10"
-          @current-change="handlePageChange" />
+          <div class="sidebar-footer">
+            <div class="user-profile">
+              <el-avatar :size="32" src="https://via.placeholder.com/40" />
+              <span class="username">用户名</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 切换按钮 - 放在中间位置 -->
+        <div class="sidebar-toggle" @click="toggleSidebar">
+          <el-icon v-if="sidebarCollapsed">
+            <ArrowRight />
+          </el-icon>
+          <el-icon v-else>
+            <ArrowLeft />
+          </el-icon>
+        </div>
+      </div>
+
+      <!-- 内容区域 -->
+      <div class="content-area">
+        <div class="content-header glass-panel">
+          <h1>{{ category.categoryName }}</h1>
+          <div class="header-actions">
+            <div class="search-group">
+              <el-input v-model="searchQuery" placeholder="搜索文章..." prefix-icon="Search" clearable class="search-input"
+                @keyup.enter="handleSearch" />
+              <el-button type="primary" @click="handleSearch">
+                <el-icon>
+                  <Search />
+                </el-icon>
+                搜索
+              </el-button>
+              <el-button @click="handleReset">
+                <el-icon>
+                  <RefreshRight />
+                </el-icon>
+                重置
+              </el-button>
+            </div>
+            <el-radio-group v-model="filterCondition" class="filter-group">
+              <el-radio-button :label="1">最新发布</el-radio-button>
+              <el-radio-button :label="0">最多阅读</el-radio-button>
+            </el-radio-group>
+          </div>
+        </div>
+        <h3 style="margin-left: 20px;color: #333">{{ category.description }}</h3>
+
+        <div class="articles-container" ref="articlesContainer" @scroll="handleScroll">
+          <div v-infinite-scroll="loadMoreArticles" infinite-scroll-distance="100" infinite-scroll-immediate="false"
+            class="articles-wrapper">
+            <div v-for="article in displayedArticles" :key="article.id" :id="`article-${article.id}`"
+              class="article-card glass-panel" :class="{ 'highlight': article.highlight }" ref="articleRefs">
+              <div class="article-header">
+                <h2 class="article-title">{{ article.title }}</h2>
+                <div class="article-date">{{ formatDate(article.updateTime) }}
+                  <div class="click_times" style="color: blanchedalmond;">点击量：{{ article.clickTimes }}</div>
+                </div>
+
+              </div>
+
+              <div class="article-body">
+                <div class="article-content">
+                  <p class="article-excerpt">{{ formatExcerpt(article.content) }}</p>
+                  <div class="article-tags">
+                    <el-tag v-for="tag in article.tags" :key="tag" size="small" effect="plain" class="article-tag">
+                      {{ tag }}
+                    </el-tag>
+                  </div>
+                </div>
+
+                <div class="article-image" v-if="article.cover">
+                  <el-image :src="article.cover" :alt="article.title" :preview-src-list="[article.cover]"
+                    preview-teleported fit="cover" loading="lazy" class="article-img">
+                    <template #error>
+                      <div class="image-error">
+                        <el-icon>
+                          <Picture />
+                        </el-icon>
+                        <span>加载失败</span>
+                      </div>
+                    </template>
+                  </el-image>
+                </div>
+              </div>
+
+            </div>
+
+            <div v-if="loading" class="loading-more">
+              <el-icon class="is-loading">
+                <Loading />
+              </el-icon>
+              <span>加载更多文章...</span>
+            </div>
+
+            <div v-if="noMoreArticles" class="no-more-articles">
+              已经到底了
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+//#region Imports
+import { ref, reactive, computed, onMounted, nextTick, onUnmounted, watch } from 'vue'
+import {
+  ArrowLeft, ArrowRight, Search, Filter, View, Star, Share,
+  HomeFilled, Bell, Message, Document, Loading, Timer, RefreshRight
+} from '@element-plus/icons-vue'
 import { useRoute } from 'vue-router'
-import { Document, DataLine, Brush, Cellphone } from '@element-plus/icons-vue'
+import { categoryGetService } from '@/api/category'
+import { articleListService } from '@/api/article'
+//#endregion
 
-const route = useRoute()
-const sortBy = ref('latest')
-const activeTab = ref('all')
-const currentPage = ref(1)
+//#region State & Variables
+// 路由相关
+const route = useRoute()  // Vue Router的路由实例，用于获取路由参数
 
-// 根据路由参数获取分类信息
-const categorySlug = computed(() => route.params.slug || 'frontend')
+// UI状态
+const sidebarCollapsed = ref(false)  // 侧边栏是否折叠
+const searchQuery = ref('')  // 搜索关键词
 
-// 分类信息
-const categoryInfo = computed(() => {
-  const categories = {
-    frontend: {
-      title: '前端开发',
-      description: '探索HTML, CSS, JavaScript以及相关框架和技术的最新趋势',
-      icon: Document
-    },
-    backend: {
-      title: '后端技术',
-      description: '服务器端开发、数据库、API设计等技术文章',
-      icon: DataLine
-    },
-    uiux: {
-      title: 'UI/UX设计',
-      description: '用户界面设计、用户体验、交互设计的理论与实践',
-      icon: Brush
-    },
-    mobile: {
-      title: '移动开发',
-      description: '移动应用开发技术、跨平台框架、响应式设计等',
-      icon: Cellphone
+// 加载状态
+const loading = ref(false)  // 是否正在加载文章
+const noMoreArticles = ref(false)  // 是否已经没有更多文章
+
+// DOM引用
+const articlesContainer = ref(null)  // 文章容器的DOM引用
+const articleRefs = ref([])  // 所有文章卡片的DOM引用数组
+
+
+// 分类数据
+const category = ref('')  // 当前分类的信息
+const displayedArticles = ref([])  // 当前显示的文章列表
+
+// 时间筛选相关
+const currentYear = new Date().getFullYear().toString()  // 当前年份
+const years = ref([])  // 所有可选的年份数据
+const activeYears = ref([currentYear])  // 当前展开的年份面板
+const selectedYear = ref(currentYear)  // 当前选中的年份
+const selectedMonth = ref((new Date().getMonth() + 1).toString())  // 当前选中的月份
+
+// 搜索和筛选状态
+const filterCondition = ref(1)
+
+// 分页相关
+// 格式化年月为Java LocalDate格式 (yyyy-MM-dd)
+const formatToLocalDate = (year, month) => {
+  // 补零，确保月份是两位数
+  const formattedMonth = month.toString().padStart(2, '0')
+  // 默认使用每月第一天
+  return `${year}-${formattedMonth}-01`
+}
+const pageNum = ref(1)  // 当前页码
+const pageSize = ref(10)  // 每页显示的文章数量
+const pageParams = ref({
+  categoryId: route.params.slug,
+  pageNum: pageNum.value,
+  pageSize: pageSize.value,
+  filterCondition: filterCondition.value,
+  title: searchQuery.value,
+  date: formatToLocalDate(selectedYear.value, selectedMonth.value)
+})
+
+// 监听筛选条件变化
+watch([searchQuery, filterCondition], () => {
+  pageParams.value = {
+    ...pageParams.value,
+    filterCondition: filterCondition.value,
+    title: searchQuery.value
+  }
+})
+
+//#endregion
+
+//#region API Calls
+const getCategory = async (id) => {
+  const res = await categoryGetService(id)
+  category.value = res.data
+}
+
+
+
+// 加载文章列表
+const loadArticles = async () => {
+  try {
+    loading.value = true
+    const response = await articleListService(pageParams.value)
+    const data = response.data
+
+    if (data.result.length < pageSize.value) {
+      noMoreArticles.value = true
+    }
+
+    // 为每篇文章添加示例标签
+    const articleTags = [
+      ['Vue3', 'JavaScript', '前端开发'],
+      ['React', 'TypeScript', '组件开发'],
+      ['后端开发', 'Java', 'Spring Boot'],
+      ['数据库', 'MySQL', '性能优化'],
+      ['DevOps', 'Docker', '持续集成'],
+      ['UI设计', '用户体验', '响应式'],
+      ['算法', '数据结构', '编程技巧'],
+      ['微服务', '架构设计', '系统优化'],
+      ['前端框架', 'Element Plus', '组件库'],
+      ['网络编程', 'HTTP', 'WebSocket']
+    ]
+
+    return data.result.map(article => ({
+      ...article,
+      tags: articleTags[Math.floor(Math.random() * articleTags.length)]
+    }))
+  } catch (error) {
+    console.error('加载文章失败:', error)
+    return []
+  } finally {
+    loading.value = false
+  }
+}
+
+// 组件挂载后调用
+// 无限滚动加载更多
+const loadMoreArticles = async () => {
+  if (loading.value || noMoreArticles.value) return
+
+  const newArticles = await loadArticles(pageParams.value)
+  if (newArticles.length > 0) {
+    displayedArticles.value = [...displayedArticles.value, ...newArticles]
+    currentPage.value++
+  }
+}
+//#endregion
+
+//#region Watchers
+watch(() => route.params.slug, async (newId) => {
+  if (newId) {
+    await getCategory(newId)
+    // 重置页面状态
+    currentPage.value = 1
+    displayedArticles.value = []
+    noMoreArticles.value = false
+    await loadMoreArticles()
+  }
+}, { immediate: true })
+//#endregion
+
+//#region Methods
+// 格式化日期
+const formatDate = (date) => {
+  if (!date) return ''
+  const d = new Date(date)
+  const year = d.getFullYear()
+  const month = (d.getMonth() + 1).toString().padStart(2, '0')
+  const day = d.getDate().toString().padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+// 切换侧边栏
+const toggleSidebar = () => {
+  sidebarCollapsed.value = !sidebarCollapsed.value
+}
+
+// 检查月份是否激活
+const isMonthActive = (year, month) => {
+  return selectedYear.value === year && selectedMonth.value === month
+}
+
+// 选择月份
+const selectMonth = async (year, month) => {
+  selectedYear.value = year
+  selectedMonth.value = month
+
+  // 重置状态
+  currentPage.value = 1
+  displayedArticles.value = []
+  noMoreArticles.value = false
+
+  // 加载新月份的文章
+  await loadMoreArticles()
+
+  // 滚动到顶部
+  nextTick(() => {
+    if (articlesContainer.value) {
+      articlesContainer.value.scrollTop = 0
+    }
+  })
+}
+
+// 处理滚动事件
+const handleScroll = () => {
+  if (!articlesContainer.value) return
+
+  const { scrollTop, scrollHeight, clientHeight } = articlesContainer.value
+  // 当滚动到距离底部100px时加载更多
+  if (scrollHeight - scrollTop - clientHeight < 100) {
+    loadMoreArticles()
+  }
+}
+
+// 格式化摘要内容，超过200个字符显示省略号
+const formatExcerpt = (content) => {
+  if (!content) return ''
+  const maxLength = 300 // 增加字符显示数量
+  return content.length > maxLength ? content.slice(0, maxLength) + '...' : content
+}
+
+// 搜索处理
+const handleSearch = async () => {
+  // 重置页面状态
+  pageNum.value = 1
+  displayedArticles.value = []
+  noMoreArticles.value = false
+
+  // 更新搜索参数
+  pageParams.value = {
+    ...pageParams.value,
+    pageNum: 1,
+    title: searchQuery.value,
+    filterCondition: filterCondition.value
+  }
+
+  // 重新加载文章
+  await loadMoreArticles()
+}
+
+// 重置处理
+const handleReset = async () => {
+  // 重置所有状态
+  searchQuery.value = ''
+  filterCondition.value = 1
+  pageNum.value = 1
+  displayedArticles.value = []
+  noMoreArticles.value = false
+
+  // 重置搜索参数
+  pageParams.value = {
+    categoryId: route.params.slug,
+    pageNum: 1,
+    pageSize: 10,
+    filterCondition: 1,
+    title: '',
+    date: formatToLocalDate(selectedYear.value, selectedMonth.value)
+  }
+
+  // 重新加载文章
+  await loadMoreArticles()
+}
+//#endregion
+
+//#region Lifecycle Hooks
+onMounted(() => {
+  // 初始化数据
+  updateYearsAndMonths()
+
+  // 监听页面可见性变化
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+
+  // 初始加载文章
+  loadMoreArticles()
+})
+
+onUnmounted(() => {
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
+})
+//#endregion
+
+//#region Utils
+// 生成年份和月份数据
+const generateYearsAndMonths = () => {
+  const currentDate = new Date()
+  const currentYear = currentDate.getFullYear()
+  const currentMonth = currentDate.getMonth() + 1
+
+  // 生成最近12个月的数据
+  const years = new Map()
+  let year = currentYear
+  let month = currentMonth
+
+  for (let i = 0; i < 12; i++) {
+    if (!years.has(year)) {
+      years.set(year, {
+        value: year.toString(),
+        label: `${year}年`,
+        months: []
+      })
+    }
+
+    const yearData = years.get(year)
+    yearData.months.unshift({
+      value: month.toString(),
+      label: `${month}月`,
+      count: Math.floor(Math.random() * 10) + 5 // 这里应该从API获取实际文章数
+    })
+
+    month--
+    if (month === 0) {
+      month = 12
+      year--
     }
   }
 
-  return categories[categorySlug.value] || categories.frontend
-})
-
-const categoryTitle = computed(() => categoryInfo.value.title)
-const categoryDescription = computed(() => categoryInfo.value.description)
-const categoryIcon = computed(() => categoryInfo.value.icon)
-
-// 模拟文章数据
-const articles = ref([
-  {
-    id: 1,
-    title: 'CSS Grid与Flexbox布局的对比分析',
-    description: '深入比较两种现代CSS布局技术，了解它们各自的优势和适用场景。',
-    image: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/ff7de4323d2c8b5b54884f35cc64982-Pm6QTeQIpny9dfWxEXHJo72IEm6NRD.png',
-    tag: 'CSS',
-    date: '2023年9月28日',
-    views: 102
-  },
-  {
-    id: 2,
-    title: '深入理解ES6+新特性',
-    description: '深入解析ES6+的新特性，以及如何在实际项目中高效地运用这些特性。',
-    image: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/ff7de4323d2c8b5b54884f35cc64982-Pm6QTeQIpny9dfWxEXHJo72IEm6NRD.png',
-    tag: 'JavaScript',
-    date: '2023年8月25日',
-    views: 152
-  },
-  {
-    id: 3,
-    title: '现代CSS技术与设计趋势',
-    description: '探索最新的CSS技术，包括Grid布局、变量等，以及它们如何改变现代网页设计。',
-    image: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/bb39aa1f9a34861c4b69e0af6230758-an9isYh6ReUVV7CwD9jcKNTO7muQTQ.png',
-    tag: 'CSS',
-    date: '2023年8月14日',
-    views: 89
-  },
-  {
-    id: 4,
-    title: 'React Hooks完全指南',
-    description: '全面介绍React Hooks的使用方法、最佳实践和常见陷阱。',
-    image: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/940540be69a5aab847b2c4d9a87608e-qOoaFiHO37ZT60oZzJ9EJAcVyXkHHe.png',
-    tag: 'React',
-    date: '2023年9月15日',
-    views: 76
-  }
-])
-
-// 根据筛选条件过滤文章
-const filteredArticles = computed(() => {
-  let result = [...articles.value]
-
-  // 根据标签筛选
-  if (activeTab.value !== 'all') {
-    result = result.filter(article => article.tag.toLowerCase() === activeTab.value)
-  }
-
-  // 根据排序方式排序
-  if (sortBy.value === 'latest') {
-    result.sort((a, b) => new Date(b.date) - new Date(a.date))
-  } else if (sortBy.value === 'popular') {
-    result.sort((a, b) => b.views - a.views)
-  }
-
-  return result
-})
-
-const handlePageChange = (page) => {
-  currentPage.value = page
-  // 在实际应用中，这里会重新获取对应页码的数据
+  return Array.from(years.values())
 }
 
-onMounted(() => {
-  // 在实际应用中，这里会根据路由参数获取对应分类的文章
-  console.log('加载分类:', categorySlug.value)
-})
+// 更新年月数据
+const updateYearsAndMonths = () => {
+  const newYears = generateYearsAndMonths()
+  years.value = newYears
+  activeYears.value = [currentYear]
+}
+
+// 监听页面显示状态
+const handleVisibilityChange = () => {
+  if (document.visibilityState === 'visible') {
+    const newYears = generateYearsAndMonths()
+    if (JSON.stringify(years.value[0].months) !== JSON.stringify(newYears[0].months)) {
+      years.value = newYears
+      activeYears.value = [currentYear]
+    }
+  }
+}
+//#endregion
 </script>
 
 <style scoped>
-.category-page {
-  max-width: 1200px;
-  margin: 0 auto;
+.app-container {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  min-height: 100vh;
+  width: 100%;
+  background: linear-gradient(135deg, #ffffff, #486eeb);
+  color: #ffffff;
+  --bg-color: rgba(28, 28, 30, 0.7);
+  --bg-color-light: rgba(44, 44, 46, 0.7);
+  --text-color: #ffffff;
+  --text-color-secondary: rgba(235, 235, 245, 0.6);
+  --border-color: rgba(84, 84, 88, 0.65);
+  --accent-color: #0A84FF;
+  --sidebar-width: 150px;
+  --sidebar-collapsed-width: 50px;
+  --header-height: 60px;
 }
 
-.category-header {
+.glass-panel {
+  background-color: var(--bg-color);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 1.5rem;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.main-layout {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  min-height: 100vh;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.sidebar {
+  width: var(--sidebar-width);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.sidebar.collapsed {
+  width: var(--sidebar-collapsed-width);
+  min-width: var(--sidebar-collapsed-width);
+}
+
+.sidebar-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.sidebar-header {
   display: flex;
   align-items: center;
-  padding: 30px;
-  margin-bottom: 30px;
+  padding: 1rem;
 }
 
-.category-icon {
-  background-color: rgba(255, 255, 255, 0.2);
-  border-radius: 50%;
-  width: 60px;
-  height: 60px;
+.app-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.year-collapse {
+  border: none;
+  background: transparent;
+}
+
+.year-collapse :deep(.el-collapse-item__header) {
+  background: transparent;
+  border: none;
+  color: var(--text-color);
+  font-weight: 500;
+  padding: 0.5rem 0;
+}
+
+.month-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.month-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.month-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.month-item.active {
+  background-color: rgba(10, 132, 255, 0.2);
+  color: var(--accent-color);
+}
+
+.article-count {
+  background-color: rgba(0, 47, 255, 0.1);
+  padding: 0.125rem 0.5rem;
+  border-radius: 1rem;
+  font-size: 0.75rem;
+
+}
+
+.sidebar-footer {
+  padding: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.username {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.sidebar-toggle {
+  position: absolute;
+  right: -20px;
+  top: 50%;
+  transform: translateY(-50%);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 20px;
+  width: 40px;
+  height: 40px;
+  background-color: var(--accent-color);
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
-.category-info h1 {
-  font-size: 1.8rem;
-  margin-bottom: 5px;
+.sidebar-toggle:hover {
+  background-color: var(--accent-color);
+  transform: translateY(-50%) scale(1.1);
 }
 
-.filter-container {
-  margin-bottom: 30px;
+.sidebar.collapsed .sidebar-toggle {
+  right: -20px;
+}
+
+.content-area {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.content-header {
+  padding: 1rem;
   display: flex;
   flex-wrap: wrap;
+  gap: 1rem;
   align-items: center;
 }
 
-.filter-label {
-  margin-right: 10px;
-  color: var(--light-text);
-}
-
-.filter-tabs {
-  margin-top: 20px;
-  width: 100%;
-}
-
-.articles-container {
-  margin-bottom: 40px;
-}
-
-.article-card {
-  margin-bottom: 20px;
-  height: 100%;
-}
-
-.article-content {
-  display: flex;
-}
-
-.article-image {
-  width: 120px;
-  height: 120px;
-  object-fit: cover;
-  border-radius: 4px;
-  margin-right: 15px;
-}
-
-.article-details {
+.content-header h1 {
+  font-size: 1.5rem;
+  font-weight: 500;
+  margin: 0;
   flex: 1;
 }
 
-.article-meta {
-  margin-bottom: 10px;
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
 }
 
-.article-tag {
-  background-color: #e6f7ff;
-  color: #1890ff;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 0.8rem;
+.search-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.search-input {
+  width: 240px;
+}
+
+.filter-group {
+  background: var(--bg-color-light);
+  padding: 0.25rem;
+  border-radius: 0.5rem;
+}
+
+:deep(.el-radio-button__inner) {
+  background: transparent !important;
+  border: none !important;
+  color: var(--text-color-secondary) !important;
+  box-shadow: none !important;
+}
+
+:deep(.el-radio-button__original-radio:checked + .el-radio-button__inner) {
+  background: var(--accent-color) !important;
+  color: white !important;
+  box-shadow: none !important;
+}
+
+
+.articles-container {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 0.625rem;
+}
+
+.articles-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.article-card {
+  padding: 1.25rem;
+  transition: all 0.3s ease;
+}
+
+.article-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
 }
 
 .article-title {
-  font-size: 1.1rem;
-  margin-bottom: 10px;
-  color: var(--text-color);
+  font-size: 1.25rem;
+  font-weight: 500;
+  margin: 0;
+  flex: 1;
 }
 
-.article-desc {
-  color: var(--light-text);
-  margin-bottom: 10px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+.article-date {
+  font-size: 0.875rem;
+  color: var(--text-color-secondary);
+  white-space: nowrap;
+}
+
+.article-body {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1.25rem;
+  margin-bottom: 0.5rem;
+  max-height: 200px;
   overflow: hidden;
-  font-size: 0.9rem;
 }
 
-.article-footer {
+.article-content {
+  min-width: 0;
   display: flex;
-  justify-content: space-between;
-  color: var(--lighter-text);
-  font-size: 0.8rem;
+  flex-direction: column;
 }
 
-.pagination-container {
+.article-excerpt {
+  margin-right: 1rem;
+  line-height: 1.6;
+  color: var(--text-color-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 6;
+  -webkit-box-orient: vertical;
+  max-height: 9.6em;
+  margin-bottom: 0.5rem;
+}
+
+.article-image {
+  width: 150px;
+  height: 150px;
+  border-radius: 0.5rem;
+  overflow: hidden;
+
+}
+
+.article-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.loading-more,
+.no-more-articles {
+  text-align: center;
+  padding: 1.25rem;
+  color: var(--text-color-secondary);
+}
+
+.article-tags {
   display: flex;
-  justify-content: center;
-  margin-top: 30px;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: auto;
+  padding-top: 0.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-@media (max-width: 768px) {
-  .article-content {
-    flex-direction: column;
-  }
+.article-tag {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: var(--text-color) !important;
+  font-size: 0.75rem !important;
+  padding: 0 0.5rem !important;
+  height: 1.5rem !important;
+  line-height: 1.5rem !important;
+  border-radius: 0.75rem !important;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  transition: all 0.3s ease;
+}
 
-  .article-image {
-    width: 100%;
-    height: 180px;
-    margin-right: 0;
-    margin-bottom: 15px;
-  }
+.article-tag:hover {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  transform: translateY(-1px);
 }
 </style>

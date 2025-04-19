@@ -41,14 +41,13 @@
         </el-button>
 
         <div class="category-container" ref="categoryContainer">
-          <router-link v-for="category in categories" :key="category.id" :to="`/category/${category.path}`"
+          <router-link v-for="category in categories" :key="category.id" :to="`/category/${category.id}`"
             class="category-item">
             <el-card shadow="hover">
-              <el-icon size="24">
-                <component :is="category.icon" />
-              </el-icon>
-              <h3>{{ category.name }}</h3>
-              <p>{{ category.count }}篇文章</p>
+
+              <h3>{{ category.categoryName }}</h3>
+              <h4>{{ category.description }}</h4>
+              <p>{{ category.articleCount }}篇文章</p>
             </el-card>
           </router-link>
         </div>
@@ -58,10 +57,10 @@
             <ArrowRight />
           </el-icon>
         </el-button>
-
-
       </div>
     </div>
+
+
 
 
     <div class="GlodenTitle" style="font-size: 3rem;margin-bottom: 4rem;">Silicon vallery</div>
@@ -132,9 +131,11 @@ import WhiteButton from '../components/WhiteButton.vue'
 import Notice from '../components/NoticeComponent.vue'
 import MusicBox from '@/components/MusicBox.vue'
 import HomeCover from '@/components/HomeCover.vue'
-
+import { getCategories } from '@/util/common'
 import { Document, DataLine, Brush, Cellphone, ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
 import FloatCardsVue from '@/components/FloatCards.vue'
+import { categoryListService } from '@/api/category'
+
 
 // 模拟数据
 const featuredArticles = ref([
@@ -168,43 +169,7 @@ const featuredArticles = ref([
 ])
 
 // 类别数据
-const categories = ref([
-  {
-    id: 1,
-    name: '前端开发',
-    path: 'frontend',
-    icon: 'Document',
-    count: 24
-  },
-  {
-    id: 2,
-    name: '后端技术',
-    path: 'backend',
-    icon: 'DataLine',
-    count: 18
-  },
-  {
-    id: 3,
-    name: 'UI/UX设计',
-    path: 'uiux',
-    icon: 'Brush',
-    count: 15
-  },
-  {
-    id: 4,
-    name: '移动开发',
-    path: 'mobile',
-    icon: 'Cellphone',
-    count: 12
-  },
-  {
-    id: 5,
-    name: '人工智能',
-    path: 'ai',
-    icon: 'DataLine',
-    count: 9
-  }
-])
+const categories = ref([])
 
 const categoryContainer = ref(null)
 
@@ -238,6 +203,12 @@ onMounted(() => {
   // 组件挂载后可以调用获取数据函数
   // fetchCategories()
 })
+
+const loadCategories = async () => {
+  categories.value = await getCategories()
+}
+
+loadCategories()
 </script>
 
 <style scoped>

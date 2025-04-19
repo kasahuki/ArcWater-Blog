@@ -21,6 +21,13 @@ export default defineConfig({
       '51e46d8.r22.cpolar.top', // 添加你要允许的主机地址
       // 可以添加多个主机地址，用逗号分隔
     ],
+    proxy:{
+      '/api':{
+        target:'http://localhost:8080/user',
+        changeOrigin:true,
+        rewrite:(path) => path.replace(/^\/api/,'')
+      }
+    }
   }
   
 })
