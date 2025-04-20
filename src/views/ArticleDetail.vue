@@ -28,18 +28,38 @@
           <!-- 相关文章 -->
           <!-- 相关文章文章数据模型 -->
           <div class="related-articles">
-            <h3>相关文章</h3>
-            <el-row :gutter="20">
+            <h3 class="section-title">
+              <span class="title-text">相关文章</span>
+              <span class="title-decoration"></span>
+            </h3>
+            <el-row :gutter="24">
               <el-col :xs="24" :sm="12" :md="8" v-for="item in relatedArticles" :key="item.id">
-                <router-link :to="`/article/${item.id}`">
-                  <el-card class="article-card" shadow="hover">
-                    <img :src="item.cover" class="related-article-image" alt="" />
-                    <h4>{{ item.title }}</h4>
-                    <div class="article-footer">
-                      <span class="article-date">{{ dayjs(item.updateTime).format('YYYY-MM-DD HH:mm:ss') }}</span>
-                      <span class="article-views">{{ item.clickTimes }}次阅读</span>
+                <router-link :to="`/article/${item.id}`" class="article-link">
+                  <div class="article-card">
+                    <div class="image-wrapper">
+                      <img :src="item.cover" class="article-image" alt="" />
+                      <div class="image-overlay"></div>
                     </div>
-                  </el-card>
+                    <div class="card-content">
+                      <h4 class="article-title">{{ item.title }}</h4>
+                      <div class="article-info">
+                        <div class="info-item time">
+                          <svg class="icon" viewBox="0 0 24 24">
+                            <path
+                              d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8zm.5-13H11v6l5.2 3.2.8-1.2-4.5-2.7V7z" />
+                          </svg>
+                          <span>{{ dayjs(item.updateTime).format('YYYY-MM-DD HH:mm') }}</span>
+                        </div>
+                        <div class="info-item views">
+                          <svg class="icon" viewBox="0 0 24 24">
+                            <path
+                              d="M12 4.5C7 4.5 2.7 7.6 1 12c1.7 4.4 6 7.5 11 7.5s9.3-3.1 11-7.5c-1.7-4.4-6-7.5-11-7.5zM12 17c-2.8 0-5-2.2-5-5s2.2-5 5-5 5 2.2 5 5-2.2 5-5 5zm0-8c-1.7 0-3 1.3-3 3s1.3 3 3 3 3-1.3 3-3-1.3-3-3-3z" />
+                          </svg>
+                          <span>{{ formatNumber(item.clickTimes) }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </router-link>
               </el-col>
             </el-row>
@@ -85,7 +105,7 @@
                     <div class="popular-title">{{ item.title }}</div>
                     <div class="popular-meta">
                       <span class="popular-views"><i class="el-icon-view"></i> {{ item.clickTimes }}次阅读</span>
-                      <span class="popular-time">{{ formatRelativeTime(item.updateTime) }}</span>
+                      <span class="popular-time">{{ dayjs(item.updateTime).format('YYYY-MM-DD HH:mm') }}</span>
                     </div>
                   </div>
                 </router-link>
@@ -97,13 +117,7 @@
           <div class="sidebar-section tags">
             <h3>标签云</h3>
             <div class="tag-cloud">
-              <router-link to="/tag/css" class="tag-item">CSS</router-link>
-              <router-link to="/tag/javascript" class="tag-item">JavaScript</router-link>
-              <router-link to="/tag/html" class="tag-item">HTML</router-link>
-              <router-link to="/tag/vue" class="tag-item">Vue</router-link>
-              <router-link to="/tag/react" class="tag-item">React</router-link>
-              <router-link to="/tag/typescript" class="tag-item">TypeScript</router-link>
-              <router-link to="/tag/nodejs" class="tag-item">Node.js</router-link>
+
             </div>
           </div>
 
@@ -128,7 +142,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick, onUnmounted, computed } from 'vue'
+import { ref, onMounted, nextTick, onUnmounted, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { Share } from '@element-plus/icons-vue'
 import IconBar from '../components/IconBar.vue'
@@ -440,7 +454,8 @@ const getRelatedArticles = async () => {
     const res = await relatedArticleService(
       {
         categoryId: article.value.categoryId,
-        count: 3
+        count: 3,
+        id: article.value.id
       }
     )
 
@@ -470,6 +485,22 @@ const loadData = async () => {
   await getRelatedArticles()
   await getHotArticles()
 }
+watch(() => route.params.id, async (newId) => {
+  if (newId) {
+    console.log('文章变化，加载新文章：', newId)
+
+    // 重置状态
+    tocItems.value = []
+    relatedArticles.value = []
+    popularArticles.value = []
+    article.value = {}
+    articleId.value = newId
+    // 获取新文章信息
+    await loadData()
+
+  }
+}, { immediate: true })
+
 //#endregion
 
 //#region 生命周期钩子
@@ -496,21 +527,23 @@ onUnmounted(() => {
 // 格式化相对时间
 const formatRelativeTime = (dateTime) => {
   if (!dateTime) return '未知时间'
+  return dayjs(dateTime).format('YYYY-MM-DD HH:mm')
+}
 
-  const now = dayjs()
-  const targetDate = dayjs(dateTime)
-  const diffDays = now.diff(targetDate, 'day')
+// 格式化时间
+const formatTimeAgo = (dateTime) => {
+  if (!dateTime) return '未知时间'
+  return dayjs(dateTime).format('YYYY-MM-DD HH:mm')
+}
 
-  if (diffDays < 1) {
-    return targetDate.fromNow() // 今天内：几小时前、几分钟前
-  } else if (diffDays < 7) {
-    return targetDate.fromNow() // 一周内：x天前
-  } else if (diffDays < 30) {
-    return `${Math.floor(diffDays / 7)}周前` // 一个月内：x周前
-  } else if (diffDays < 365) {
-    return `${Math.floor(diffDays / 30)}个月前` // 一年内：x个月前
+// 格式化阅读次数
+const formatNumber = (clickTimes) => {
+  if (clickTimes >= 1000000) {
+    return (clickTimes / 1000000).toFixed(2) + 'M'
+  } else if (clickTimes >= 10000) {
+    return (clickTimes / 1000).toFixed(2) + 'K'
   } else {
-    return `${Math.floor(diffDays / 365)}年前` // 超过一年：x年前
+    return clickTimes.toString()
   }
 }
 //#endregion
@@ -752,20 +785,136 @@ const formatRelativeTime = (dateTime) => {
 }
 
 .related-articles {
-  margin-top: 40px;
+  margin: 48px 0;
+  padding: 0 16px;
 }
 
-.related-articles h3 {
-  margin-bottom: 20px;
-  font-size: 1.3rem;
+.section-title {
+  position: relative;
+  margin-bottom: 32px;
+  display: flex;
+  align-items: center;
 }
 
-.related-article-image {
+.section-title .title-text {
+  font-family: -apple-system, SF Pro Display, sans-serif;
+  font-size: 24px;
+  font-weight: 600;
+  background: linear-gradient(135deg, var(--el-color-primary), var(--el-color-primary-light-3));
+  -webkit-background-clip: text;
+  color: transparent;
+  margin-right: 16px;
+}
+
+.section-title .title-decoration {
+  flex: 1;
+  height: 2px;
+  background: linear-gradient(to right,
+      var(--el-color-primary-light-5),
+      transparent);
+}
+
+.article-link {
+  text-decoration: none;
+  display: block;
+  margin-bottom: 24px;
+}
+
+.article-card {
+  background: var(--el-bg-color);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.article-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.article-card:hover .article-image {
+  transform: scale(1.05);
+}
+
+.article-card:hover .image-overlay {
+  opacity: 0.3;
+}
+
+.image-wrapper {
+  position: relative;
+  padding-top: 56.25%;
+  overflow: hidden;
+}
+
+.article-image {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
-  height: 120px;
+  height: 100%;
   object-fit: cover;
-  border-radius: 4px;
-  margin-bottom: 10px;
+  transition: transform 0.3s ease;
+}
+
+.image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to bottom,
+      transparent 0%,
+      rgba(0, 0, 0, 0.2) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.card-content {
+  padding: 16px;
+}
+
+.article-title {
+  font-family: -apple-system, SF Pro Text, sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--el-text-color-primary);
+  margin: 0 0 12px;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.article-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.info-item .icon {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+.info-item.time {
+  color: var(--el-text-color-secondary);
+}
+
+.info-item.views {
+  color: var(--el-color-primary);
+  font-weight: 500;
 }
 
 /* 侧边栏样式 */
