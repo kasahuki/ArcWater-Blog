@@ -14,15 +14,16 @@
         <el-col :xs="24" :sm="12" :md="8" v-for="article in featuredArticles" :key="article.id">
           <router-link :to="`/article/${article.id}`">
             <el-card class="article-card" shadow="hover">
-              <img :src="article.image" class="article-image" alt="文章图片" />
+              <img :src="article.cover" class="article-image" alt="" />
               <div class="article-meta">
-                <span class="article-category">{{ article.category }}</span>
+                <span class="article-category">{{ categoryIdMapName[article.categoryId] }}</span>
               </div>
               <h3 class="article-title">{{ article.title }}</h3>
-              <p class="article-desc">{{ article.description }}</p>
+              <p class="article-desc">{{ article.content }}</p>
+              <!-- 到一定程度省略 -->
               <div class="article-footer">
-                <span class="article-date">{{ article.date }}</span>
-                <span class="article-views">{{ article.views }}次阅读</span>
+                <span class="article-date">{{ article.updateTime }}</span>
+                <span class="article-views">{{ article.clickTimes }}次阅读</span>
               </div>
             </el-card>
           </router-link>
@@ -135,42 +136,11 @@ import { getCategories } from '@/util/common'
 import { Document, DataLine, Brush, Cellphone, ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
 import FloatCardsVue from '@/components/FloatCards.vue'
 import { categoryListService } from '@/api/category'
+import { hotArticleService } from '@/api/article'
 
-
-// 模拟数据
-const featuredArticles = ref([
-  {
-    id: 1,
-    title: '现代CSS技术与设计趋势',
-    description: '探索最新的CSS技术，包括Grid布局、变量等，以及它们如何改变现代网页设计。',
-    image: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/bb39aa1f9a34861c4b69e0af6230758-an9isYh6ReUVV7CwD9jcKNTO7muQTQ.png',
-    category: '前端开发',
-    date: '2023年8月14日',
-    views: 152
-  },
-  {
-    id: 2,
-    title: '深入理解ES6+新特性',
-    description: '深入解析ES6+的新特性，以及如何在实际项目中高效地运用这些特性。',
-    image: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/ff7de4323d2c8b5b54884f35cc64982-Pm6QTeQIpny9dfWxEXHJo72IEm6NRD.png',
-    category: 'JavaScript',
-    date: '2023年8月25日',
-    views: 102
-  },
-  {
-    id: 3,
-    title: 'UI设计中的动态与漂浮',
-    description: '探讨如何在用户界面中创造动感，以及如何设计出有层次感的漂浮元素。',
-    image: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/940540be69a5aab847b2c4d9a87608e-qOoaFiHO37ZT60oZzJ9EJAcVyXkHHe.png',
-    category: 'UI/UX设计',
-    date: '2023年9月10日',
-    views: 62
-  }
-])
-
-// 类别数据
+import dayjs from 'dayjs'
+const featuredArticles = ref([''])
 const categories = ref([])
-
 const categoryContainer = ref(null)
 
 // 滑动功能
@@ -188,14 +158,15 @@ const scrollCategories = (direction) => {
 }
 
 // 可以在这里添加后端接口请求函数
-const fetchCategories = async () => {
+const getHotArticles = async () => {
   try {
     // 实际项目中可以替换为真实的API调用
-    // const response = await axios.get('/api/categories')
-    // categories.value = response.data
-    console.log('获取分类数据')
+    const response = await hotArticleService(3)
+    if (response.data) {
+      featuredArticles.value = response.data
+    }
   } catch (error) {
-    console.error('获取分类失败:', error)
+    console.error('获取热门失败:', error)
   }
 }
 
@@ -204,11 +175,17 @@ onMounted(() => {
   // fetchCategories()
 })
 
+const categoryIdMapName = ref({})
+
 const loadCategories = async () => {
   categories.value = await getCategories()
+  categories.value.map(category => {
+    categoryIdMapName.value[category.id] = category.categoryName
+  })
 }
 
 loadCategories()
+getHotArticles()
 </script>
 
 <style scoped>

@@ -25,6 +25,7 @@ const routes = [
     path: '/article/:id',
     name: 'ArticleDetail',
     component: ArticleDetail
+    
   },
   {
     path: '/about',
