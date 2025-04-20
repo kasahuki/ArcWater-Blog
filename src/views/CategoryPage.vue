@@ -184,25 +184,21 @@ const formatToLocalDate = (year, month) => {
   // 默认使用每月第一天
   return `${year}-${formattedMonth}-01`
 }
+
 const pageNum = ref(1)  // 当前页码
-const pageSize = ref(10)  // 每页显示的文章数量
-const pageParams = ref({
+const pageSize = ref(2)  // 每页显示的文章数量
+
+//要让 pageParams.date 在 selectedYear 和 selectedMonth 改变时自动响应并更新，把整个 pageParams 变成一个计算属性。
+const pageParams = computed(() => ({
   categoryId: route.params.slug,
   pageNum: pageNum.value,
   pageSize: pageSize.value,
   filterCondition: filterCondition.value,
   title: searchQuery.value,
   date: formatToLocalDate(selectedYear.value, selectedMonth.value)
-})
+}))
 
-// 监听筛选条件变化
-watch([searchQuery, filterCondition], () => {
-  pageParams.value = {
-    ...pageParams.value,
-    filterCondition: filterCondition.value,
-    title: searchQuery.value
-  }
-})
+
 
 //#endregion
 
@@ -218,7 +214,11 @@ const getCategory = async (id) => {
 const loadArticles = async () => {
   try {
     loading.value = true
-    const response = await articleListService(pageParams.value)
+    const params = {
+      ...pageParams.value,
+      pageNum: pageNum.value
+    }
+    const response = await articleListService(params)
     const data = response.data
 
     if (data.result.length < pageSize.value) {
@@ -251,28 +251,88 @@ const loadArticles = async () => {
   }
 }
 
-// 组件挂载后调用
 // 无限滚动加载更多
 const loadMoreArticles = async () => {
   if (loading.value || noMoreArticles.value) return
 
-  const newArticles = await loadArticles(pageParams.value)
-  if (newArticles.length > 0) {
+  pageNum.value++
+  console.log('加载更多文章，当前页码：', pageNum.value)
+
+  const newArticles = await loadArticles()
+  if (newArticles && newArticles.length > 0) {
     displayedArticles.value = [...displayedArticles.value, ...newArticles]
-    currentPage.value++
   }
 }
-//#endregion
+
+// 处理滚动事件
+const handleScroll = () => {
+  if (!articlesContainer.value || loading.value || noMoreArticles.value) return
+
+  const { scrollTop, scrollHeight, clientHeight } = articlesContainer.value
+  const scrollBottom = scrollHeight - scrollTop - clientHeight
+
+  // 当距离底部小于100px时加载更多
+  if (scrollBottom < 100) {
+    console.log('触发加载更多', {
+      scrollTop,
+      scrollHeight,
+      clientHeight,
+      scrollBottom,
+      pageNum: pageNum.value
+    })
+    loadMoreArticles()
+  }
+}
+
+// 选择月份
+const selectMonth = async (year, month) => {
+  // 如果点击的是当前选中的月份，则不重新加载
+  if (selectedYear.value === year && selectedMonth.value === month) {
+    return;
+  }
+
+  selectedYear.value = year
+  selectedMonth.value = month
+
+  // 重置状态
+  pageNum.value = 1
+  displayedArticles.value = []
+  noMoreArticles.value = false
+
+  // 加载新月份的文章
+  const newArticles = await loadArticles()
+  if (newArticles && newArticles.length > 0) {
+    displayedArticles.value = newArticles
+  }
+
+  // 滚动到顶部
+  nextTick(() => {
+    if (articlesContainer.value) {
+      articlesContainer.value.scrollTop = 0
+    }
+  })
+}
+
+// 监听筛选条件变化
+watch([filterCondition], async () => {
+  // 重置页面状态
+  pageNum.value = 1
+  displayedArticles.value = []
+  noMoreArticles.value = false
+
+  // 加载文章
+  const newArticles = await loadArticles()
+  if (newArticles && newArticles.length > 0) {
+    displayedArticles.value = newArticles
+  }
+}, { immediate: true })
+
 
 //#region Watchers
+// 监听路由参数变化
 watch(() => route.params.slug, async (newId) => {
   if (newId) {
     await getCategory(newId)
-    // 重置页面状态
-    currentPage.value = 1
-    displayedArticles.value = []
-    noMoreArticles.value = false
-    await loadMoreArticles()
   }
 }, { immediate: true })
 //#endregion
@@ -296,38 +356,6 @@ const toggleSidebar = () => {
 // 检查月份是否激活
 const isMonthActive = (year, month) => {
   return selectedYear.value === year && selectedMonth.value === month
-}
-
-// 选择月份
-const selectMonth = async (year, month) => {
-  selectedYear.value = year
-  selectedMonth.value = month
-
-  // 重置状态
-  currentPage.value = 1
-  displayedArticles.value = []
-  noMoreArticles.value = false
-
-  // 加载新月份的文章
-  await loadMoreArticles()
-
-  // 滚动到顶部
-  nextTick(() => {
-    if (articlesContainer.value) {
-      articlesContainer.value.scrollTop = 0
-    }
-  })
-}
-
-// 处理滚动事件
-const handleScroll = () => {
-  if (!articlesContainer.value) return
-
-  const { scrollTop, scrollHeight, clientHeight } = articlesContainer.value
-  // 当滚动到距离底部100px时加载更多
-  if (scrollHeight - scrollTop - clientHeight < 100) {
-    loadMoreArticles()
-  }
 }
 
 // 格式化摘要内容，超过200个字符显示省略号
@@ -388,12 +416,26 @@ onMounted(() => {
   // 监听页面可见性变化
   document.addEventListener('visibilitychange', handleVisibilityChange)
 
+  // 添加滚动事件监听
+  if (articlesContainer.value) {
+    articlesContainer.value.addEventListener('scroll', handleScroll)
+  }
+
   // 初始加载文章
-  loadMoreArticles()
+  loadArticles().then(articles => {
+    if (articles && articles.length > 0) {
+      displayedArticles.value = articles
+    }
+  })
 })
 
 onUnmounted(() => {
   document.removeEventListener('visibilitychange', handleVisibilityChange)
+
+  // 移除滚动事件监听
+  if (articlesContainer.value) {
+    articlesContainer.value.removeEventListener('scroll', handleScroll)
+  }
 })
 //#endregion
 
@@ -422,7 +464,7 @@ const generateYearsAndMonths = () => {
     yearData.months.unshift({
       value: month.toString(),
       label: `${month}月`,
-      count: Math.floor(Math.random() * 10) + 5 // 这里应该从API获取实际文章数
+      // count: Math.floor(Math.random() * 10) + 5 // 这里应该从API获取实际文章数
     })
 
     month--
