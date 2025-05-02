@@ -14,14 +14,14 @@
           </div>
 
           <el-scrollbar height="calc(100vh - 180px)">
-            <el-collapse v-model="activeYears" accordion class="year-collapse">
+            <el-collapse v-model="activeYears" accordion class="year-collapse" @change="handleYearChange">
               <el-collapse-item v-for="year in years" :key="year.value" :title="year.label" :name="year.value">
                 <div class="month-list">
                   <div v-for="month in year.months" :key="`${year.value}-${month.value}`" class="month-item"
                     :class="{ 'active': isMonthActive(year.value, month.value) }"
                     @click="selectMonth(year.value, month.value)">
                     <span>{{ month.label }}</span>
-                    <span class="article-count">{{ month.count }}</span>
+                    <span class="article-count"> {{}}</span>
                   </div>
                 </div>
               </el-collapse-item>
@@ -74,7 +74,9 @@
             </el-radio-group>
           </div>
         </div>
-        <h3 style="margin-left: 20px;color: white">{{ category.description }}</h3>
+        <div class="description-container glass-panel">
+          <h2 class="description-title">描述：{{ category.description }}</h2>
+        </div>
 
         <div class="articles-container" ref="articlesContainer" @scroll="handleScroll">
           <div v-infinite-scroll="loadMoreArticles" infinite-scroll-distance="100" infinite-scroll-immediate="false"
@@ -147,6 +149,9 @@ import { useRoute, useRouter } from 'vue-router'
 import { categoryGetService } from '@/api/category'
 import { articleListService } from '@/api/article'
 //#endregion
+
+
+
 
 //#region State & Variables
 // 路由相关
@@ -302,7 +307,7 @@ const selectMonth = async (year, month) => {
   selectedYear.value = year
   selectedMonth.value = month
 
-  // 重置并重新加载
+  // // 重置并重新加载
   await resetAndLoad()
 
   // 滚动到顶部
@@ -339,6 +344,22 @@ watch(() => route.params.slug, async (newSlug) => {
 //#endregion
 
 //#region Methods
+// 处理年份变化
+const dateMapArticleCount = ref({})
+const handleYearChange = (activeNames) => {
+
+  console.log('年份变化，当前展开的年份：', activeNames)
+
+
+
+  // 如果年份面板被关闭，则重置为当前年份
+  if (!activeNames || activeNames.length === 0) {
+    activeYears.value = [currentYear]
+  } else {
+    activeYears.value = activeNames
+  }
+}
+
 // 格式化日期
 const formatDate = (date) => {
   if (!date) return ''
@@ -414,9 +435,6 @@ onMounted(() => {
     articlesContainer.value.addEventListener('scroll', handleScroll)
   }
 
-  // 初始加载第一页文章
-  console.log('组件挂载，开始加载第一页')
-  resetAndLoad()
 })
 
 onUnmounted(() => {
@@ -508,7 +526,7 @@ const handleScroll = () => {
   width: 100%;
   background: linear-gradient(135deg, #1a1c2a, #2d3154, #31346e);
   color: #ffffff;
-  --primary-color: #6366f1;
+  --primary-color: #bcbde9;
   --primary-light: #818cf8;
   --primary-dark: #4f46e5;
   --bg-color: rgba(28, 28, 45, 0.65);
@@ -618,11 +636,25 @@ const handleScroll = () => {
 }
 
 .article-count {
-  background-color: rgba(0, 47, 255, 0.1);
-  padding: 0.125rem 0.5rem;
+  background-color: rgba(99, 102, 241, 0.15);
+  padding: 0.25rem 0.75rem;
   border-radius: 1rem;
   font-size: 0.75rem;
+  color: var(--accent-color);
+  font-weight: 500;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  transition: all 0.3s ease;
+}
 
+.month-item:hover .article-count {
+  background-color: rgba(99, 102, 241, 0.25);
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.month-item.active .article-count {
+  background-color: rgba(99, 102, 241, 0.3);
+  border-color: rgba(99, 102, 241, 0.4);
+  color: #fff;
 }
 
 .sidebar-footer {
@@ -688,7 +720,7 @@ const handleScroll = () => {
 .content-header h1 {
   font-size: 1.75rem;
   font-weight: 600;
-  background: linear-gradient(135deg, #818cf8, #6366f1);
+  background: linear-gradient(135deg, #fee4a9, #e63007);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   margin: 0;
@@ -766,7 +798,7 @@ const handleScroll = () => {
 }
 
 :deep(.el-radio-button__original-radio:checked + .el-radio-button__inner) {
-  background: linear-gradient(135deg, #6366f1, #4f46e5) !important;
+  background: linear-gradient(135deg, hsl(239, 62%, 76%), #0b92a4) !important;
   color: white !important;
   border-color: transparent !important;
   box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
@@ -779,12 +811,12 @@ const handleScroll = () => {
   overflow-x: hidden;
   /* 禁止水平滚动 */
   padding-right: 0.625rem;
-  height: calc(100vh - var(--header-height) - 6rem);
-  /* 减去头部和其他元素的高度 */
+  height: calc(100vh - var(--header-height) - 8rem);
+  /* 增加底部空间，确保分页下拉框显示 */
   position: relative;
   /* 自定义滚动条样式 */
   scrollbar-width: thin;
-  scrollbar-color: rgba(99, 102, 241, 0.3) transparent;
+  scrollbar-color: rgba(40, 43, 225, 0.3) transparent;
 }
 
 /* Webkit浏览器的滚动条样式 */
@@ -809,8 +841,10 @@ const handleScroll = () => {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  padding-bottom: 2rem;
-  /* 底部留出空间显示加载状态 */
+  padding-bottom: 3rem;
+  /* 增加底部内边距，为分页留出更多空间 */
+  min-height: 100%;
+  /* 确保内容至少占满容器高度 */
 }
 
 .article-card {
@@ -984,5 +1018,36 @@ const handleScroll = () => {
   .search-group {
     width: 100%;
   }
+
+  .articles-container {
+    height: calc(100vh - var(--header-height) - 10rem);
+    /* 在移动端增加更多空间 */
+  }
+}
+
+.description-container {
+  margin: 1rem 1.5rem;
+  padding: 1.25rem;
+  background: rgba(35, 35, 141, 0.45);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  border-radius: 1rem;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.description-container:hover {
+  background: rgba(44, 44, 66, 0.55);
+  border-color: rgba(99, 102, 241, 0.25);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
+}
+
+.description-title {
+  color: rgba(235, 235, 245, 0.9);
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin: 0;
+  line-height: 1.6;
 }
 </style>
