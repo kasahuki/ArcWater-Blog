@@ -12,9 +12,9 @@ export const articleDetailService = (id) => {
 
 
 export const hotArticleService = (count)=>{
-  return request.get('/article/hot?count='+count)
+  return request.get('article/hot?count='+count)
 }
 
 export const relatedArticleService = (params)=>{
-  return request.get('/article/related',{params:params})
+  return request.get('article/related',{params:params})
 }
