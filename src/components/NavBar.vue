@@ -56,6 +56,8 @@ import { useRoute } from 'vue-router'
 import { Search, Moon, Sunny } from '@element-plus/icons-vue'
 import { categoryListService } from '@/api/category'
 import { getCategories } from '@/util/common'
+import { useCategoryStore } from '@/stores/categoryStore'
+const categoryStore = useCategoryStore()
 const route = useRoute()
 const searchQuery = ref('')
 const isDarkMode = ref(false)
@@ -102,6 +104,7 @@ const handleSearch = () => {
 const categories = ref([])
 const loadCategories = async () => {
   categories.value = await getCategories()
+  categoryStore.setCategories(categories.value)
 }
 
 loadCategories()

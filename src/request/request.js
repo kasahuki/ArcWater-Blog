@@ -5,7 +5,7 @@ import {ElMessage} from 'element-plus'
 import router from '@/router'
 
 // 创建请求实例
-const baseURL = '/api'
+const baseURL = '/api/user'
 const instance = axios.create({ baseURL })
 // 跨域问题
 

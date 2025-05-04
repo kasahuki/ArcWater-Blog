@@ -3,7 +3,7 @@ import HomePage from '../views/HomePage.vue'
 import CategoryPage from '../views/CategoryPage.vue'
 import ArticleDetail from '../views/ArticleDetail.vue'
 import Login from '../views/Login.vue'
-
+import MusicShow from '../views/MusicShow.vue'
 
 const routes = [
   {
@@ -32,6 +32,11 @@ const routes = [
     name: 'About',
     // 路由懒加载 不用导入
     component: () => import('../views/AboutPage.vue')
+  },
+  {
+    path: '/music',
+    name: 'Music',
+    component: MusicShow
   }
 ]
 

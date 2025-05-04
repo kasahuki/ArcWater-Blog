@@ -1,629 +1,664 @@
 <template>
-
-  <div class="WaterTitle">My Resume</div>
-  <div class="resume-container" :class="{ 'dark-theme': isDarkMode }">
-    <div class="resume-header">
-      <div class="header-left">
-        <h1 class="name">姓名：senjay</h1>
-        <div class="title">本科在读</div>
-        <div class="slogan">2005-06-21</div>
-      </div>
-      <div class="header-right">
+  <div class="resume-container">
+    <!-- Left Sidebar -->
+    <div class="sidebar">
+      <div class="name-section">
         <div class="avatar-container">
-          <img class="avatar"
-            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/ff7de4323d2c8b5b54884f35cc64982-Pm6QTeQIpny9dfWxEXHJo72IEm6NRD.png"
-            alt="个人照片">
+          <img src="https://via.placeholder.com/200" alt="Avatar">
+        </div>
+        <h1>{{ resume.name }}</h1>
+        <h2>{{ resume.title }}</h2>
+      </div>
+
+      <div class="contact-info">
+        <div class="contact-item">
+          <i class="icon-email"></i>
+          <span>{{ resume.email }}</span>
+        </div>
+        <div class="contact-item">
+          <i class="icon-phone"></i>
+          <span>{{ resume.phone }}</span>
+        </div>
+        <div class="contact-item">
+          <i class="icon-location"></i>
+          <span>{{ resume.address }}</span>
+        </div>
+        <div class="contact-item">
+          <i class="icon-linkedin"></i>
+          <span>{{ resume.linkedin }}</span>
+        </div>
+        <div class="contact-item">
+          <i class="icon-website"></i>
+          <span>{{ resume.website }}</span>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <i class="icon-profile"></i>
+          <h3>PROFILE</h3>
+          <div class="divider"></div>
+        </div>
+        <p class="profile-text">{{ resume.profile }}</p>
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <i class="icon-education"></i>
+          <h3>EDUCATION</h3>
+          <div class="divider"></div>
+        </div>
+        <div v-for="(edu, index) in resume.education" :key="index" class="education-item">
+          <h4>{{ edu.degree }}</h4>
+          <p>{{ edu.school }}</p>
+          <p>{{ edu.years }} | {{ edu.location }}</p>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <i class="icon-languages"></i>
+          <h3>LANGUAGES</h3>
+          <div class="divider"></div>
+        </div>
+        <div v-for="(lang, index) in resume.languages" :key="index" class="language-item">
+          <div class="language-name">{{ lang.name }}</div>
+          <div class="language-level">
+            <span v-for="n in 5" :key="n" :class="['dot', n <= lang.level ? 'filled' : '']"></span>
+          </div>
         </div>
       </div>
     </div>
 
-    <div class="resume-section">
-      <div class="section-title">
-        <el-icon>
-          <User />
-        </el-icon>
-        <h2>个人信息</h2>
-      </div>
-      <div class="basic-info">
-        <div class="info-item">
-          <el-icon>
-            <School />
-          </el-icon>
-          <span>福建农林大学 | 软件工程 </span>
+    <!-- Right Content -->
+    <div class="main-content">
+      <div class="section">
+        <div class="section-header">
+          <i class="icon-experience"></i>
+          <h3>PROFESSIONAL EXPERIENCE</h3>
+          <div class="divider"></div>
         </div>
-        <div class="info-item">
-          <el-icon>
-            <Calendar />
-          </el-icon>
-          <span>2027年毕业 | 大二在读</span>
-        </div>
-        <div class="info-item">
-          <el-icon>
-            <Phone />
-          </el-icon>
-          <span>187****7579</span>
-        </div>
-        <div class="info-item">
-          <el-icon>
-            <Message />
-          </el-icon>
-          <span>3381335358@qq.com</span>
-        </div>
-        <div class="info-item">
-          <el-icon>
-            <Location />
-          </el-icon>
-          <span>福建省福州市仓山区</span>
-        </div>
-      </div>
-    </div>
 
-    <div class="resume-section">
-      <div class="section-title">
-        <el-icon>
-          <Collection />
-        </el-icon>
-        <h2>教育背景</h2>
-      </div>
-      <div class="education-item">
-        <div class="edu-header">
-          <div class="edu-school">福建农林大学</div>
-          <div class="edu-time">2023.09 - </div>
-        </div>
-        <div class="edu-details" style="color: white;">
-          <div>专业：软件工程</div>
-          <div>学历：本科</div>
-          <div>主修课程：数据结构、计算机系统基础、操作系统、计算机网络、JavaWeb应用开发、数据库系统概论、软件工程导论</div>
-          <div>GPA：3.8/4.0（专业前10%）</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 实习经历 -->
-    <!-- <div class="resume-section">
-      <div class="section-title">
-        <el-icon>
-          <Suitcase />
-        </el-icon>
-        <h2>实习经历</h2>
-      </div>
-      <div class="experience-item">
-        <div class="exp-header">
-          <div class="exp-company">腾讯科技（广州）有限公司</div>
-          <div class="exp-time">2023.07 - 2023.09</div>
-        </div>
-        <div class="exp-position">前端开发实习生</div>
-        <div class="exp-desc">
-          <ul>
-            <li>参与企业内部管理系统的前端开发，使用Vue3+ElementPlus构建高效的用户界面</li>
-            <li>负责实现复杂的数据可视化模块，使用ECharts完成多种图表展示，提升数据分析效率</li>
-            <li>优化前端性能，减少首屏加载时间30%，提升用户体验</li>
-            <li>参与代码评审，规范团队开发流程，确保代码质量</li>
+        <div v-for="(exp, index) in resume.experience" :key="index" class="experience-item">
+          <h4>{{ exp.company }}</h4>
+          <p class="job-title">{{ exp.title }}</p>
+          <p class="job-period">{{ exp.period }} | {{ exp.location }}</p>
+          <ul class="achievements">
+            <li v-for="(achievement, i) in exp.achievements" :key="i">
+              {{ achievement }}
+            </li>
           </ul>
         </div>
       </div>
-      <div class="experience-item">
-        <div class="exp-header">
-          <div class="exp-company">广州信息科技有限公司</div>
-          <div class="exp-time">2023.01 - 2023.03</div>
-        </div>
-        <div class="exp-position">Web前端开发实习生</div>
-        <div class="exp-desc">
-          <ul>
-            <li>参与公司官方网站改版项目，负责响应式布局和交互效果的实现</li>
-            <li>使用HTML5、CSS3和JavaScript开发多个交互组件，提升用户体验</li>
-            <li>协助进行页面适配测试，确保在不同设备上的兼容性</li>
-          </ul>
-        </div>
-      </div>
-    </div> -->
 
-    <!-- 项目经历 -->
-    <div class="resume-section">
-      <div class="section-title">
-        <el-icon>
-          <Connection />
-        </el-icon>
-        <h2>项目经验</h2>
-      </div>
-      <div class="project-item">
-        <div class="proj-header">
-          <div class="proj-name">校园社交平台</div>
-          <div class="proj-time">2023.03 - 2023.06</div>
+      <div class="section">
+        <div class="section-header">
+          <i class="icon-skills"></i>
+          <h3>SKILLS</h3>
+          <div class="divider"></div>
         </div>
-        <div class="proj-desc">
-          <ul>
-            <li>使用Vue3+Vite框架构建前端，Node.js+Express搭建后端服务</li>
-            <li>实现用户认证、社交动态、即时通讯等核心功能</li>
-            <li>设计并实现响应式UI界面，确保在移动端和PC端的良好体验</li>
-            <li>使用Socket.io实现实时聊天功能，MongoDB存储用户数据</li>
-            <li>项目在校内测试阶段获得500+活跃用户，反馈良好</li>
-          </ul>
+        <div class="skills-container">
+          <div v-for="(skill, index) in resume.skills" :key="index" class="skill-badge">
+            {{ skill }}
+          </div>
         </div>
       </div>
-      <div class="project-item">
-        <div class="proj-header">
-          <div class="proj-name">个人技术博客</div>
-          <div class="proj-time">2022.10 - 至今</div>
+
+      <div class="section">
+        <div class="section-header">
+          <i class="icon-awards"></i>
+          <h3>AWARDS</h3>
+          <div class="divider"></div>
         </div>
-        <div class="proj-desc">
-          <ul>
-            <li>基于Vue和ElementPlus框架开发的个人博客网站</li>
-            <li>实现文章展示、分类筛选、评论互动等功能</li>
-            <li>使用Markdown渲染引擎支持代码高亮和数学公式</li>
-            <li>接入第三方评论系统，提升用户互动体验</li>
-            <li>博客累计发布30+技术文章，月访问量2000+</li>
-          </ul>
+        <div v-for="(award, index) in resume.awards" :key="index" class="award-item">
+          <h4>{{ award.title }}</h4>
+          <p>{{ award.organization }}, {{ award.year }}</p>
         </div>
       </div>
     </div>
-    <!-- 技术栈 -->
-    <div class="resume-section" style="color: white;">
-
-      <div class="section-title">
-        <el-icon>
-          <Operation />
-        </el-icon>
-        <h2>技术栈</h2>
-      </div>
-
-      <div class="tech-stack">
-        <p class="tech-line">
-          <span class="tech-category">前端技术：</span>
-          <span class="tech-content">HTML5/CSS3、JavaScript、Vue.js</span>
-        </p>
-        <p class="tech-line">
-          <span class="tech-category">后端技术：</span>
-          <span class="tech-content">SSM框架、SpringBoot、SpringCloud、MySQL</span>
-        </p>
-        <p class="tech-line">
-          <span class="tech-category">中间件与运维：</span>
-          <span class="tech-content">Redis、RabbitMQ、Docker、Linux</span>
-        </p>
-      </div>
-    </div>
-
-    <!-- 获奖情況 -->
-    <div class="resume-section">
-      <div class="section-title">
-        <el-icon>
-          <Trophy />
-        </el-icon>
-        <h2>获奖情况</h2>
-      </div>
-      <div class="award-list">
-        <div class="award-item">
-          <div class="award-time">2023.05</div>
-          <div class="award-name">福建省蓝桥杯B组 - 三等奖</div>
-        </div>
-
-      </div>
-    </div>
-    <!-- 个人优势 -->
-    <div class="resume-section">
-      <div class="section-title">
-        <el-icon>
-          <StarFilled />
-        </el-icon>
-        <h2>兴趣爱好&个人优势</h2>
-      </div>
-      <div class="self-evaluation" style="color: white;">
-        看书、听音乐，喜欢学习新鲜事物
-      </div>
-    </div>
-
-
-  </div>
-  <div class="GlodenTitle" style="text-align: end;">
-    To be Continue……
   </div>
 </template>
 
-<script setup>
-import { ref, computed } from 'vue'
-import {
-  User, School, Calendar, Phone, Message, Location,
-  Collection, Suitcase, Connection, Operation,
-  Trophy, StarFilled
-} from '@element-plus/icons-vue'
-
-// 获取暗黑模式状态
-const isDarkMode = computed(() => {
-  return document.documentElement.classList.contains('dark-mode')
-})
+<script>
+export default {
+  name: 'ResumeTemplate',
+  data() {
+    return {
+      resume: {
+        name: 'senjay',
+        title: '2005-06-21',
+        email: '3381335358@qq.com',
+        phone: ' 18750767579',
+        address: '22611 Pacific Coast Hwy, Malibu, California, 9022, USA',
+        linkedin: 'linkedin.com/wayne-2345',
+        website: 'wayne.com',
+        profile: 'I\'m Brian Thomas Wayne, a business development consultant with a passion for helping companies achieve their growth potential. With my MBA degree and extensive experience in strategy and relationship building, I strive to provide innovative solutions that drive success for my clients.',
+        education: [
+          {
+            degree: 'Master of Business Administration',
+            school: 'Harvard Business School',
+            years: '2016 – 2018',
+            location: 'Boston'
+          },
+          {
+            degree: 'Master of Business Administration',
+            school: 'Harvard Business School',
+            years: '2015 – 2018',
+            location: 'Boston'
+          }
+        ],
+        languages: [
+          { name: 'English', level: 5 },
+          { name: 'Spanish', level: 4 }
+        ],
+        experience: [
+          {
+            company: 'Appleseed Inc.',
+            title: 'Business Development Consultant',
+            period: '2022 – present',
+            location: 'NewYork',
+            achievements: [
+              'Developed and implemented strategic plans resulting in a 30% increase in new business opportunities.',
+              'Collaborated with cross-functional teams to drive business growth and expansion.',
+              'Established and maintained relationships with key partners resulting in a 25% increase in sales revenue.',
+              'Conducted market research and analysis to identify new market opportunities resulting in the successful launch of a new product line.'
+            ]
+          },
+          {
+            company: 'Aexus',
+            title: 'Business Development',
+            period: '2018 – 2022',
+            location: 'Los Angeles, USA',
+            achievements: [
+              'Worked closely with tech and software companies to provide expert sales outsourcing services',
+              'Built and managed dedicated sales teams in Europe, the Americas, and Asia Pacific',
+              'Contributed to Aexus Sales Outsourcing\'s proven track record of success in acting as an extension to the sales force of over 500+ vendors of new and innovative software and tech products, services, and solutions since the year 2000.'
+            ]
+          }
+        ],
+        skills: [
+          'Strategic thinking and problem-solving',
+          'Relationship building and networking',
+          'Creative and innovative thinking'
+        ],
+        awards: [
+          {
+            title: 'Outstanding Business Student Award',
+            organization: 'University of Southern California',
+            year: '2014'
+          },
+          {
+            title: 'Dean\'s List',
+            organization: 'University of California, Los Angeles',
+            year: '2015-2016'
+          }
+        ]
+      }
+    }
+  }
+}
 </script>
 
 <style scoped>
-.resume-container {
-  max-width: 1000px;
-  margin: 0 auto 50px;
-  padding: 30px;
-  background: rgba(2, 49, 77, 0.8);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  position: relative;
-  overflow: hidden;
+:root {
+  --primary-color: #2c3e50;
+  --accent-color: #e74c3c;
+  --text-light: #ffffff;
+  --text-dark: #333333;
+  --background-light: #ffffff;
+  --divider-color: #e74c3c;
+  --skill-bg: #f8d7da;
 }
 
-/* 添加渐变背景 */
-.resume-container::before {
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Arial', sans-serif;
+}
+
+.resume-container {
+  display: flex;
+  max-width: 1200px;
+  margin: 2rem auto;
+  background: #fff;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.1);
+}
+
+/* Sidebar Styles */
+.sidebar {
+  background: linear-gradient(135deg, #1a1c2a, #2d3154);
+  color: rgba(255, 255, 255, 0.95);
+  padding: 40px;
+  width: 35%;
+  position: relative;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+}
+
+.sidebar::before {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg,
-      rgba(255, 255, 255, 0.15) 0%,
-      rgba(255, 255, 255, 0.1) 100%);
-  z-index: -1;
+  background: linear-gradient(45deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%);
+  pointer-events: none;
 }
 
-.resume-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.header-left {
-  flex: 1;
-}
-
-.name {
-  font-size: 2.5rem;
-  margin-bottom: 10px;
-  color: #ffffff;
-  font-weight: 600;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  letter-spacing: 0.5px;
-}
-
-.title {
-  font-size: 1.5rem;
-  color: #4d99ff;
-  margin-bottom: 10px;
-  font-weight: 500;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  letter-spacing: 0.3px;
-}
-
-.slogan {
-  color: rgba(255, 255, 255, 0.95);
-  font-size: 1rem;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-}
-
-.header-right {
-  margin-left: 30px;
+.name-section {
+  text-align: center;
+  margin-bottom: 40px;
+  position: relative;
 }
 
 .avatar-container {
-  width: 150px;
-  height: 150px;
-  overflow: hidden;
+  width: 200px;
+  height: 200px;
+  margin: 0 auto 20px;
   border-radius: 50%;
-  border: 4px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  padding: 8px;
+  background: linear-gradient(135deg, #00a2ff, #0066ff);
+  position: relative;
+  overflow: hidden;
 }
 
-.avatar {
+.avatar-container::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+  border-radius: 50%;
+  z-index: 1;
+}
+
+.avatar-container img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  border-radius: 50%;
+  border: 4px solid rgba(255, 255, 255, 0.2);
 }
 
-.resume-section {
-  margin-bottom: 30px;
-  padding-bottom: 20px;
+.name-section h1 {
+  font-size: 2.6rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+  background: linear-gradient(135deg, #ffffff, #f0f0f0);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  letter-spacing: -0.02em;
 }
 
-.section-title {
+.name-section h2 {
+  font-size: 1.3rem;
+  font-weight: 500;
+  color: #00a2ff;
+  letter-spacing: 0.02em;
+  text-shadow: 0 0 20px rgba(0, 162, 255, 0.5);
+}
+
+.contact-info {
+  margin-bottom: 40px;
+  background: rgba(255, 255, 255, 0.07);
+  padding: 25px;
+  border-radius: 15px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.contact-item {
   display: flex;
   align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  margin-bottom: 15px;
+  padding: 10px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.9);
 }
 
-.section-title .el-icon {
-  font-size: 1.5rem;
-  margin-right: 10px;
-  color: #4d99ff;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
-}
-
-.section-title h2 {
-  font-size: 1.5rem;
+.contact-item:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateX(5px);
   color: #ffffff;
-  margin: 0;
-  font-weight: 600;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  letter-spacing: 0.3px;
 }
 
-.basic-info {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 15px;
-}
-
-.info-item {
+.contact-item i {
+  margin-right: 15px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
-  color: rgba(255, 255, 255, 0.95);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  font-size: 1.1rem;
+  color: #00a2ff;
+  box-shadow: 0 0 15px rgba(0, 162, 255, 0.3);
 }
 
-.info-item .el-icon {
-  margin-right: 10px;
-  color: #4d99ff;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+.profile-text {
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-.education-item,
-.experience-item,
-.project-item {
+.education-item {
   margin-bottom: 20px;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  transition: all 0.3s ease;
 }
 
-.edu-header,
-.exp-header,
-.proj-header {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 10px;
+.education-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateX(5px);
 }
 
-.edu-school,
-.exp-company,
-.proj-name {
+.education-item h4 {
+  color: #ffffff;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  letter-spacing: 0.02em;
+}
+
+.education-item p {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.95rem;
+  margin-bottom: 5px;
+  letter-spacing: 0.02em;
+}
+
+.language-item {
+  background: rgba(255, 255, 255, 0.07);
+  padding: 12px 15px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+
+.language-name {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #ffffff;
+  letter-spacing: 0.02em;
+}
+
+.sidebar .section-header h3 {
+  color: #ffffff;
   font-size: 1.2rem;
   font-weight: 600;
-  color: #ffffff;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  letter-spacing: 0.2px;
 }
 
-.edu-time,
-.exp-time,
-.proj-time {
-  color: rgba(255, 255, 255, 0.9);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+.sidebar .divider {
+  flex-grow: 1;
+  height: 2px;
+  background: linear-gradient(to right, rgba(255, 255, 255, 0.2), transparent);
+  margin-left: 15px;
 }
 
-.exp-position {
-  font-size: 1.1rem;
-  color: #4d99ff;
+/* Main Content Styles */
+.main-content {
+  background-color: #fff;
+  padding: 40px;
+  width: 65%;
+}
+
+.section {
+  margin-bottom: 40px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 25px;
+  position: relative;
+}
+
+.section-header::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(to right, #00a2ff, transparent);
+}
+
+.section-header i {
+  margin-right: 15px;
+  color: #00a2ff;
+  font-size: 1.5rem;
+}
+
+.section-header h3 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #1a1c2a;
+  letter-spacing: 1px;
+}
+
+/* Experience Items */
+.experience-item {
+  margin-bottom: 30px;
+  padding: 20px;
+  border-radius: 15px;
+  background: #f8f9fa;
+  transition: all 0.3s ease;
+}
+
+.experience-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+}
+
+.experience-item h4 {
+  color: #00a2ff;
+  font-size: 1.2rem;
   margin-bottom: 10px;
-  font-weight: 500;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.exp-desc ul,
-.proj-desc ul {
+.job-title {
+  font-weight: 600;
+  color: #1a1c2a;
+  margin-bottom: 8px;
+}
+
+.job-period {
+  color: #666;
+  font-size: 0.9rem;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+}
+
+.achievements {
   padding-left: 20px;
 }
 
-.exp-desc li,
-.proj-desc li {
-  margin-bottom: 5px;
-  line-height: 1.6;
-  color: rgba(255, 255, 255, 0.95);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-}
-
-.skills-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
-  gap: 30px;
-}
-
-.skill-category h3 {
-  font-size: 1.2rem;
-  margin-bottom: 15px;
-  color: #333;
-}
-
-.skill-list {
-  display: grid;
-  gap: 15px;
-}
-
-.skill-item {
-  display: flex;
-  align-items: center;
-}
-
-.skill-name {
-  width: 160px;
-  margin-right: 15px;
-}
-
-.skill-level {
-  width: 40px;
-  margin-left: 10px;
-  text-align: right;
-  color: #409eff;
-  font-weight: 500;
-}
-
-.award-list {
-  display: grid;
-  gap: 15px;
-}
-
-.award-item {
-  display: flex;
-  align-items: center;
-  color: rgba(255, 255, 255, 0.95);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-}
-
-.award-time {
-  width: 70px;
-  margin-right: 20px;
-  color: rgba(255, 255, 255, 0.9);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-}
-
-.award-name {
-  font-weight: 500;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-}
-
-.self-evaluation p {
+.achievements li {
   margin-bottom: 10px;
-  line-height: 1.8;
-  text-align: justify;
-  color: rgba(255, 255, 255, 0.95);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  line-height: 1.6;
+  position: relative;
+  padding-left: 20px;
 }
 
-/* 暗黑模式适配 */
-.resume-container.dark-theme {
-  background-color: #2a2a2a;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+.achievements li::before {
+  content: '▹';
+  position: absolute;
+  left: 0;
+  color: #00a2ff;
 }
 
-.resume-container.dark-theme .name,
-.resume-container.dark-theme .section-title h2,
-.resume-container.dark-theme .edu-school,
-.resume-container.dark-theme .exp-company,
-.resume-container.dark-theme .proj-name,
-.resume-container.dark-theme .skill-category h3 {
-  color: #ffffff;
+/* Skills Section */
+.skills-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
-.resume-container.dark-theme .title,
-.resume-container.dark-theme .exp-position,
-.resume-container.dark-theme .skill-level,
-.resume-container.dark-theme .section-title .el-icon {
-  color: #4d99ff;
+.skill-badge {
+  background: linear-gradient(135deg, #f8f9fa, #fff);
+  color: #00a2ff;
+  padding: 10px 20px;
+  border-radius: 25px;
+  font-size: 0.95rem;
+  border: 1px solid rgba(0, 162, 255, 0.2);
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-.resume-container.dark-theme .slogan,
-.resume-container.dark-theme .info-item,
-.resume-container.dark-theme .edu-time,
-.resume-container.dark-theme .exp-time,
-.resume-container.dark-theme .proj-time,
-.resume-container.dark-theme .exp-desc li,
-.resume-container.dark-theme .proj-desc li,
-.resume-container.dark-theme .skill-name,
-.resume-container.dark-theme .award-name,
-.resume-container.dark-theme .self-evaluation p {
-  color: #cccccc;
+.skill-badge:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  border-color: #00a2ff;
 }
 
-.resume-container.dark-theme .award-time {
-  color: #aaaaaa;
+/* Language Section */
+.language-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding: 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
 }
 
-.resume-container.dark-theme .section-title,
-.resume-container.dark-theme .resume-header {
-  border-bottom-color: #3a3a3a;
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .resume-container {
-    padding: 20px;
-    margin: 20px;
-  }
-
-  .resume-header {
-    flex-direction: column;
-    text-align: center;
-  }
-
-  .header-left {
-    margin-bottom: 20px;
-  }
-
-  .header-right {
-    margin-left: 0;
-  }
-
-  .name {
-    font-size: 2rem;
-  }
-
-  .title {
-    font-size: 1.2rem;
-  }
-
-  .avatar-container {
-    width: 120px;
-    height: 120px;
-  }
-
-  .skills-container,
-  .basic-info {
-    grid-template-columns: 1fr;
-  }
-
-  .skill-item {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .skill-name {
-    width: 100%;
-    margin-bottom: 5px;
-  }
-
-  .skill-level {
-    align-self: flex-end;
-  }
-}
-
-@media (max-width: 480px) {
-  .resume-container {
-    padding: 15px;
-    margin: 15px;
-  }
-
-  .name {
-    font-size: 1.8rem;
-  }
-
-  .title {
-    font-size: 1.1rem;
-  }
-
-  .avatar-container {
-    width: 100px;
-    height: 100px;
-  }
-
-  .section-title h2 {
-    font-size: 1.3rem;
-  }
-}
-
-/* 添加滚动条样式 */
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
+.language-item:hover {
   background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
 }
 
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 4px;
+.language-level {
+  display: flex;
+  gap: 5px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.4);
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.dot.filled {
+  background: #00a2ff;
+  box-shadow: 0 0 10px rgba(0, 162, 255, 0.5);
+}
+
+/* Awards Section */
+.award-item {
+  margin-bottom: 20px;
+  padding: 15px;
+  border-radius: 10px;
+  background: #f8f9fa;
+  transition: all 0.3s ease;
+}
+
+.award-item:hover {
+  transform: translateX(5px);
+  background: #fff;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+
+.award-item h4 {
+  color: #00a2ff;
+  margin-bottom: 5px;
+}
+
+/* Icons */
+[class^="icon-"] {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  position: relative;
+}
+
+.icon-email::before {
+  content: "✉";
+}
+
+.icon-phone::before {
+  content: "☎";
+}
+
+.icon-location::before {
+  content: "📍";
+}
+
+.icon-linkedin::before {
+  content: "🔗";
+}
+
+.icon-website::before {
+  content: "🌐";
+}
+
+.icon-profile::before {
+  content: "👤";
+}
+
+.icon-education::before {
+  content: "🎓";
+}
+
+.icon-languages::before {
+  content: "🌍";
+}
+
+.icon-experience::before {
+  content: "💼";
+}
+
+.icon-skills::before {
+  content: "🛠";
+}
+
+.icon-awards::before {
+  content: "🏆";
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .resume-container {
+    margin: 1rem;
+    flex-direction: column;
+  }
+
+  .sidebar,
+  .main-content {
+    width: 100%;
+  }
+
+  .avatar-container {
+    width: 150px;
+    height: 150px;
+  }
+}
+
+@media (max-width: 768px) {
+  .skills-container {
+    gap: 8px;
+  }
+
+  .skill-badge {
+    padding: 8px 15px;
+    font-size: 0.9rem;
+  }
 }
 </style>

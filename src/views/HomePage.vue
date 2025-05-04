@@ -21,7 +21,7 @@
               <div class="card-content">
                 <div class="article-meta">
                   <el-tag size="small" effect="plain" type="primary">{{ categoryIdMapName[article.categoryId]
-                  }}</el-tag>
+                    }}</el-tag>
                 </div>
                 <h4 class="article-title">{{ article.title }}</h4>
                 <p class="article-desc">{{ truncateContent(article.content) }}</p>
@@ -83,68 +83,54 @@
       </div>
     </div>
 
-    <div class="GlodenTitle" style="font-size: 3rem;margin-bottom: 4rem;">Silicon vallery</div>
-    <div class="flexbox">
-      <Notice title="Click to enjoy the music" body="Music" style="width: 30rem;height: 18rem;font-size: 10rem;">
 
+    <SectionTitle title="Music" />
+    <div class="flexbox" style="margin-top: 2.5rem;">
+      <Notice title="Click to enjoy" body="Music" class="music-notice" @click="$router.push('/music')">
       </Notice>
-      <div style="display: flex;flex-direction: column; height: 18rem;justify-content: space-between">
-        <div class="ArcTitle" style="font-size: 4rem;"> <span>Tech-stack beautiful</span> </div>
-        <div class="appleFont" style="text-transform: capitalize;">
-          <p>hello world</p>
-          <p>hello world</p>
-
-          <p>hello world</p>
-          <p>int main</p>
-          <p>return 0</p>
-          <p>we make the world a better place</p>
-        </div>
-
+      <!-- 透明背景钢琴图片 -->
+      <div class="piano-image-container">
+        <img src="/src/assets/image/piano.png" alt="Piano" class="piano-image" />
       </div>
     </div>
-
-    <div class="flexbox">
-
-      <div style="display: flex;flex-direction: column; height: 18rem;justify-content: space-between">
-        <div class="ArcTitle" style="font-size: 4rem;"> <span>Tech-stack beautiful</span> </div>
-        <div class="appleFont" style="text-transform: capitalize;">
-          <p>hello world</p>
-          <p>hello world</p>
-
-          <p>hello world</p>
-          <p>int main</p>
-          <p>return 0</p>
-          <p>we make the world a better place</p>
-        </div>
-
-      </div>
-
-      <Notice title="Click to enjoy the music" body="Music" style="width: 30rem;height: 18rem;font-size: 10rem;">
-
-      </Notice>
-    </div>
-
-    <div class="WaterTitle" style="font-size: 3rem;margin-bottom: 4rem;">HOUSE DOCTOR</div>
-
-    <div style="background-color: black;padding: 2.5rem; border-radius: 2rem;margin-bottom: 5rem;position: relative;">
-      <span class="appleFont" style="color: white; font-size: 2rem;">home free </span>
-      <FloatCards>
-
-      </FloatCards>
-      <div class="appleFont" style="color: white;  position: absolute;right: 2rem;bottom: 2rem;  ">
-        <WhiteButton style="width: 15rem;" content="Get Started" class="appleFont"></WhiteButton>
-      </div>
-    </div>
-
-
-
 
 
 
   </div>
+  <div class="WaterTitle" style="font-size: 3rem;margin-bottom: 4rem;">My Artifact --early time</div>
+
+  <div style="background-color: black;padding: 2.5rem; border-radius: 2rem;margin-bottom: 5rem;position: relative;">
+
+    <FloatCards>
+
+    </FloatCards>
+    <div class="appleFont" style="color: white;  position: absolute;right: 2rem;bottom: 2rem;  ">
+      <WhiteButton style="width: 15rem;" content="Learn  More" class="appleFont"></WhiteButton>
+    </div>
+  </div>
+  <div class="home-container">
+    <div class="flexbox" style="margin-bottom: 10rem;">
+      <ImageCard :url="url" />
+      <div class="profile" style="display: flex;flex-direction: column;">
+        <div class="profile-item" style="margin-left: 1rem;">
+          <div class="WaterTitle">ArcWater</div>
+          <div class="profile-item-content">
+            Welcome to ArcWater, a creative space where technology meets art. Here you'll find insightful articles,
+            music recommendations, and a collection of digital artifacts. Join me on this journey of exploration and
+            discovery in the digital realm.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+
+
 </template>
 
 <script setup>
+import ImageCard from '@/components/ImageCard.vue'
 import FloatCards from '../components/FloatCards.vue'
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import WhiteButton from '../components/WhiteButton.vue'
@@ -159,6 +145,11 @@ import { hotArticleService } from '@/api/article'
 import SectionTitle from '@/components/SectionTitle.vue'
 import dayjs from 'dayjs'
 
+import { useCategoryStore } from '@/stores/categoryStore'
+import img from '@/assets/image/arcwater_logo.png'
+
+const url = ref(img)
+const categoryStore = useCategoryStore()
 // 响应式状态声明
 const featuredArticles = ref([])
 const categories = ref([])
@@ -203,7 +194,7 @@ const truncateContent = (content) => {
 
 // 数据加载函数
 const loadCategories = async () => {
-  categories.value = await getCategories()
+  categories.value = categoryStore.categories
   categories.value.forEach(category => {
     categoryIdMapName.value[category.id] = category.categoryName
   })
@@ -332,12 +323,80 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+.GlodenTitle,
+.WaterTitle {
+  font-family: -apple-system, SF Pro Display, sans-serif;
+  font-weight: 600;
+  background: linear-gradient(135deg, var(--el-color-primary), var(--el-color-primary-light-3));
+  -webkit-background-clip: text;
+  color: transparent;
+  margin: 48px 0;
+  padding: 0 20px;
+}
+
 .flexbox {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 10rem;
+  padding: 0 20px;
+  gap: 8rem;
+  background: rgba(6, 105, 192, 0.05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(173, 216, 230, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  padding: 3rem;
+  width: 100%;
+  max-width: 100%;
+  position: relative;
+  overflow: hidden;
+}
 
+.flexbox::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(180deg,
+      transparent 0%,
+      rgba(173, 216, 230, 0.1) 20%,
+      rgba(135, 206, 235, 0.15) 40%,
+      rgba(173, 216, 230, 0.1) 60%,
+      transparent 80%);
+  animation: oceanWave 4s infinite ease-in-out;
+}
+
+.flexbox::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(180deg,
+      transparent 0%,
+      rgba(176, 224, 230, 0.08) 30%,
+      rgba(135, 206, 235, 0.12) 50%,
+      rgba(176, 224, 230, 0.08) 70%,
+      transparent 100%);
+  animation: oceanWave 6s infinite ease-in-out reverse;
+}
+
+@keyframes oceanWave {
+  0% {
+    transform: translateY(-100%) scale(1.2);
+  }
+
+  50% {
+    transform: translateY(0%) scale(1);
+  }
+
+  100% {
+    transform: translateY(100%) scale(1.2);
+  }
 }
 
 .home-container {
@@ -691,5 +750,267 @@ onBeforeUnmount(() => {
   .slider-handle {
     will-change: transform;
   }
+}
+
+.music-notice {
+  width: 35rem;
+  height: 20rem;
+  font-size: 12rem;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+  backdrop-filter: blur(20px);
+  border-radius: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.music-notice:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.1));
+}
+
+.piano-image-container {
+  flex: 1;
+  max-width: 40rem;
+  height: 20rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.piano-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  opacity: 0.9;
+  transition: all 0.3s ease;
+}
+
+.piano-image:hover {
+  opacity: 1;
+  transform: scale(1.02);
+}
+
+.profile {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
+}
+
+.profile-item {
+  margin-left: 1rem;
+  background: rgba(6, 105, 192, 0.05);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  border-radius: 15px;
+  border: 1px solid rgba(173, 216, 230, 0.2);
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.profile-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(180deg,
+      transparent 0%,
+      rgba(173, 216, 230, 0.1) 20%,
+      rgba(135, 206, 235, 0.15) 40%,
+      rgba(173, 216, 230, 0.1) 60%,
+      transparent 80%);
+  animation: oceanWave 4s infinite ease-in-out;
+}
+
+.profile-item::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(180deg,
+      transparent 0%,
+      rgba(176, 224, 230, 0.08) 30%,
+      rgba(135, 206, 235, 0.12) 50%,
+      rgba(176, 224, 230, 0.08) 70%,
+      transparent 100%);
+  animation: oceanWave 6s infinite ease-in-out reverse;
+}
+
+@keyframes oceanWave {
+  0% {
+    transform: translateY(-100%) scale(1.2);
+  }
+
+  50% {
+    transform: translateY(0%) scale(1);
+  }
+
+  100% {
+    transform: translateY(100%) scale(1.2);
+  }
+}
+
+.profile-item-content {
+  color: rgb(244, 255, 163);
+  font-size: 1.4rem;
+  line-height: 1.6;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  position: relative;
+  z-index: 1;
+}
+
+.WaterTitle {
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(135deg, var(--el-color-primary), var(--el-color-primary-light-3));
+  -webkit-background-clip: text;
+  color: transparent;
+  animation: titleWave 3s infinite ease-in-out;
+}
+
+@keyframes titleWave {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.stack {
+  width: 45%;
+  max-width: 600px;
+  transition: 0.25s ease;
+  background: rgba(6, 105, 192, 0.08);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 20px;
+  border: 1px solid rgba(173, 216, 230, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  padding: 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.stack::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(180deg,
+      transparent 0%,
+      rgba(173, 216, 230, 0.1) 20%,
+      rgba(135, 206, 235, 0.15) 40%,
+      rgba(173, 216, 230, 0.1) 60%,
+      transparent 80%);
+  animation: oceanWave 5s infinite ease-in-out;
+}
+
+.stack::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(180deg,
+      transparent 0%,
+      rgba(176, 224, 230, 0.08) 30%,
+      rgba(135, 206, 235, 0.12) 50%,
+      rgba(176, 224, 230, 0.08) 70%,
+      transparent 100%);
+  animation: oceanWave 7s infinite ease-in-out reverse;
+}
+
+.card {
+  aspect-ratio: 3 / 2;
+  border: 4px solid rgba(173, 216, 230, 0.2);
+  background-color: rgba(6, 105, 192, 0.1);
+  position: relative;
+  transition: 0.15s ease;
+  cursor: pointer;
+  padding: 5% 5% 15% 5%;
+  border-radius: 15px;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(180deg,
+      transparent 0%,
+      rgba(173, 216, 230, 0.1) 20%,
+      rgba(135, 206, 235, 0.15) 40%,
+      rgba(173, 216, 230, 0.1) 60%,
+      transparent 80%);
+  animation: oceanWave 4.5s infinite ease-in-out;
+}
+
+@keyframes oceanWave {
+  0% {
+    transform: translateY(-100%) scale(1.2);
+  }
+
+  50% {
+    transform: translateY(0%) scale(1);
+  }
+
+  100% {
+    transform: translateY(100%) scale(1.2);
+  }
+}
+
+.image {
+  width: 100%;
+  border: 4px solid rgba(173, 216, 230, 0.2);
+  background-color: rgba(6, 105, 192, 0.05);
+  aspect-ratio: 1 / 1;
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.image::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(180deg,
+      transparent 0%,
+      rgba(173, 216, 230, 0.1) 20%,
+      rgba(135, 206, 235, 0.15) 40%,
+      rgba(173, 216, 230, 0.1) 60%,
+      transparent 80%);
+  animation: oceanWave 5.5s infinite ease-in-out;
+  z-index: 2;
 }
 </style>
