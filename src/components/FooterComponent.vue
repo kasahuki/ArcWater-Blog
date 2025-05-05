@@ -20,7 +20,7 @@
 
 
       <div class="footer-section contact">
-        <h3>Contact me</h3>
+        <h3>Contact Me</h3>
         <p><el-icon>
             <Location />
           </el-icon> FAFU</p>
