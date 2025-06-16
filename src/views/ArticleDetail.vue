@@ -5,19 +5,21 @@
       <el-col :xs="24" :md="18">
         <div class="article-container">
           <div class="article-header">
-            <h1 class="article-title">{{ article.title }}</h1>
+            <h1 class="article-title">{{ article.title || '加载中...' }}</h1>
             <div class="article-meta">
-              <span class="article-date">{{ dayjs(article.updateTime).format('YYYY-MM-DD HH:mm:ss') }}</span>
-              <span class="article-views">{{ article.clickTimes }}次阅读</span>
+              <span class="article-date">{{ article.updateTime ? dayjs(article.updateTime).format('YYYY-MM-DD HH:mm:ss')
+                : '未知时间' }}</span>
+              <span class="article-views">{{ article.clickTimes || 0 }}次阅读</span>
             </div>
             <div class="article-tags">
-              <el-tag size="small" effect="plain" type="primary">{{ categoryName }}</el-tag>
-              <el-tag size="small" effect="plain" type="info" v-for="tag in article.tags" :key="tag">{{ tag }}</el-tag>
+              <el-tag size="small" effect="plain" type="primary">{{ categoryName || '未分类' }}</el-tag>
+              <el-tag size="small" effect="plain" type="info" v-for="tag in (article.tags || [])" :key="tag">{{ tag
+                }}</el-tag>
             </div>
           </div>
 
           <!-- 文章封面图 -->
-          <div class="article-cover">
+          <div class="article-cover" v-if="article.cover">
             <img :src="article.cover" alt="文章封面" />
           </div>
 
@@ -33,29 +35,31 @@
               <span class="title-decoration"></span>
             </h3>
             <el-row :gutter="24">
-              <el-col :xs="24" :sm="12" :md="8" v-for="item in relatedArticles" :key="item.id">
+              <el-col :xs="24" :sm="12" :md="8" v-for="item in (relatedArticles || [])" :key="item.id">
                 <router-link :to="`/article/${item.id}`" class="article-link">
                   <div class="article-card">
                     <div class="image-wrapper">
-                      <img :src="item.cover" class="article-image" alt="" />
+                      <img :src="item.cover || 'https://via.placeholder.com/300x200/4A90E2/FFFFFF?text=暂无封面'"
+                        class="article-image" alt="" />
                       <div class="image-overlay"></div>
                     </div>
                     <div class="card-content">
-                      <h4 class="article-title">{{ item.title }}</h4>
+                      <h4 class="article-title">{{ item.title || '无标题' }}</h4>
                       <div class="article-info">
                         <div class="info-item time">
                           <svg class="icon" viewBox="0 0 24 24">
                             <path
                               d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8zm.5-13H11v6l5.2 3.2.8-1.2-4.5-2.7V7z" />
                           </svg>
-                          <span>{{ dayjs(item.updateTime).format('YYYY-MM-DD HH:mm') }}</span>
+                          <span>{{ item.updateTime ? dayjs(item.updateTime).format('YYYY-MM-DD HH:mm') : '未知时间'
+                          }}</span>
                         </div>
                         <div class="info-item views">
                           <svg class="icon" viewBox="0 0 24 24">
                             <path
                               d="M12 4.5C7 4.5 2.7 7.6 1 12c1.7 4.4 6 7.5 11 7.5s9.3-3.1 11-7.5c-1.7-4.4-6-7.5-11-7.5zM12 17c-2.8 0-5-2.2-5-5s2.2-5 5-5 5 2.2 5 5-2.2 5-5 5zm0-8c-1.7 0-3 1.3-3 3s1.3 3 3 3 3-1.3 3-3-1.3-3-3-3z" />
                           </svg>
-                          <span>{{ formatNumber(item.clickTimes) }}</span>
+                          <span>{{ formatNumber(item.clickTimes || 0) }}</span>
                         </div>
                       </div>
                     </div>
@@ -86,7 +90,7 @@
           <div class="sidebar-section author-card">
             <h3>Author</h3>
             <div class="author-profile">
-              <el-avatar :size="60" src="https://placeholder.com/60x60" />
+              <el-avatar :size="60" src="https://via.placeholder.com/60x60/4A90E2/FFFFFF?text=头像" />
               <h4>senjay</h4>
               <IconBar></IconBar>
               <el-button type="primary" plain size="big" @click="$router.push({ name: 'About' })">
@@ -98,14 +102,15 @@
           <div class="sidebar-section popular-articles">
             <h3>热门文章</h3>
             <ul class="popular-list">
-              <li v-for="(item, index) in popularArticles" :key="item.id" class="popular-item">
+              <li v-for="(item, index) in (popularArticles || [])" :key="item.id" class="popular-item">
                 <router-link :to="`/article/${item.id}`" class="popular-link">
                   <div class="popular-rank" :class="{ 'rank-top': index < 3 }">{{ index + 1 }}</div>
                   <div class="popular-content">
-                    <div class="popular-title">{{ item.title }}</div>
+                    <div class="popular-title">{{ item.title || '无标题' }}</div>
                     <div class="popular-meta">
-                      <span class="popular-views"><i class="el-icon-view"></i> {{ item.clickTimes }}次阅读</span>
-                      <span class="popular-time">{{ dayjs(item.updateTime).format('YYYY-MM-DD HH:mm') }}</span>
+                      <span class="popular-views"><i class="el-icon-view"></i> {{ item.clickTimes || 0 }}次阅读</span>
+                      <span class="popular-time">{{ item.updateTime ? dayjs(item.updateTime).format('YYYY-MM-DD HH:mm')
+                        : '未知时间' }}</span>
                     </div>
                   </div>
                 </router-link>
@@ -202,10 +207,10 @@ const article = ref({
 })
 
 // 相关文章
-const relatedArticles = ref([''])
+const relatedArticles = ref([])
 
 // 热门文章
-const popularArticles = ref([''])
+const popularArticles = ref([])
 //#endregion
 
 //#region Markdown配置与处理
@@ -275,12 +280,33 @@ const extractHeaders = (content) => {
     const match = line.match(headerPattern)
     if (match) {
       const level = match[1].length
-      const title = match[2]
-      const id = title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+      const title = match[2].trim()
+
+      // 改进ID生成逻辑，处理特殊字符
+      let id = title
+        .toLowerCase()
+        .replace(/[^\w\s-]/g, '') // 移除特殊字符
+        .replace(/\s+/g, '-') // 空格替换为连字符
+        .replace(/-+/g, '-') // 多个连字符替换为单个
+        .replace(/^-+|-+$/g, '') // 移除首尾连字符
+
+      // 如果ID为空，使用索引作为备用
+      if (!id) {
+        id = `header-${index}`
+      }
+
+      // 确保ID唯一性
+      let uniqueId = id
+      let counter = 1
+      while (headers.some(h => h.id === uniqueId)) {
+        uniqueId = `${id}-${counter}`
+        counter++
+      }
+
       headers.push({
         level,
         title,
-        id,
+        id: uniqueId,
         isActive: false
       })
     }
@@ -416,13 +442,18 @@ const getArticleDetail = async () => {
       // 提取标题生成目录
       tocItems.value = extractHeaders(res.data.content)
 
-      // 为每个标题添加 id
+      // 为每个标题添加 id - 使用更安全的方法
       tocItems.value.forEach(item => {
-        const pattern = new RegExp(`(#{${item.level}})\\s+(${item.title})`, 'g')
-        res.data.content = res.data.content.replace(
-          pattern,
-          `$1 <span id="${item.id}">$2</span>`
-        )
+        // 使用更精确的匹配方式，避免正则表达式问题
+        const lines = res.data.content.split('\n')
+        const updatedLines = lines.map(line => {
+          const headerMatch = line.match(new RegExp(`^(#{${item.level}})\\s+(.+)$`))
+          if (headerMatch && headerMatch[2].trim() === item.title) {
+            return `${headerMatch[1]} <span id="${item.id}">${headerMatch[2]}</span>`
+          }
+          return line
+        })
+        res.data.content = updatedLines.join('\n')
       })
 
       // 转换 Markdown 为 HTML
@@ -444,13 +475,32 @@ const getArticleDetail = async () => {
 }
 
 const getCategoryName = async () => {
-  const res = await categoryGetService(article.value.categoryId)
-  categoryName.value = res.data.categoryName
+  // 添加categoryId检查，避免undefined
+  if (!article.value.categoryId) {
+    console.warn('categoryId is undefined, skipping category name fetch')
+    categoryName.value = '未分类'
+    return
+  }
+
+  try {
+    const res = await categoryGetService(article.value.categoryId)
+    categoryName.value = res.data.categoryName
+  } catch (error) {
+    console.error('获取分类名称失败:', error)
+    categoryName.value = '未分类'
+  }
 }
 
 // 获取相关文章
 const getRelatedArticles = async () => {
   try {
+    // 添加categoryId检查
+    if (!article.value.categoryId) {
+      console.warn('categoryId is undefined, skipping related articles fetch')
+      relatedArticles.value = []
+      return
+    }
+
     const res = await relatedArticleService(
       {
         categoryId: article.value.categoryId,
@@ -464,6 +514,7 @@ const getRelatedArticles = async () => {
     }
   } catch (error) {
     console.error('获取相关文章失败:', error)
+    relatedArticles.value = []
   }
 }
 
@@ -473,17 +524,31 @@ const getHotArticles = async () => {
     const res = await hotArticleService(8)
     if (res.data) {
       popularArticles.value = res.data
+    } else {
+      popularArticles.value = []
     }
   } catch (error) {
     console.error('获取热门文章失败:', error)
+    popularArticles.value = []
   }
 }
 
 const loadData = async () => {
-  await getArticleDetail()
-  await getCategoryName()
-  await getRelatedArticles()
-  await getHotArticles()
+  try {
+    // 首先获取文章详情
+    await getArticleDetail()
+
+    // 只有在成功获取文章详情后才获取其他数据
+    if (article.value && article.value.id) {
+      await Promise.all([
+        getCategoryName(),
+        getRelatedArticles(),
+        getHotArticles()
+      ])
+    }
+  } catch (error) {
+    console.error('加载数据失败:', error)
+  }
 }
 watch(() => route.params.id, async (newId) => {
   if (newId) {
@@ -493,11 +558,20 @@ watch(() => route.params.id, async (newId) => {
     tocItems.value = []
     relatedArticles.value = []
     popularArticles.value = []
-    article.value = {}
+    categoryName.value = ''
+    article.value = {
+      title: '',
+      content: '',
+      updateTime: '',
+      clickTimes: 0,
+      cover: '',
+      categoryId: '',
+      tags: []
+    }
     articleId.value = newId
+
     // 获取新文章信息
     await loadData()
-
   }
 }, { immediate: true })
 
@@ -567,9 +641,19 @@ const formatNumber = (clickTimes) => {
   margin-bottom: 30px;
 }
 
-.article-title {
-  font-size: 2rem;
-  margin-bottom: 15px;
+h1.article-title {
+  color: #1976d2;
+  font-size: 2.4rem;
+  font-weight: bold;
+  letter-spacing: 0.02em;
+  margin-bottom: 18px;
+  margin-top: 0;
+  line-height: 1.2;
+  transition: color 0.2s;
+}
+
+h1.article-title:hover {
+  color: #080c06;
 }
 
 .article-meta {
@@ -699,11 +783,19 @@ const formatNumber = (clickTimes) => {
   max-width: 100%;
 }
 
-:deep(.markdown-body img) {
-  max-width: 100%;
-  height: auto;
-  border-radius: 8px;
-  margin: 16px 0;
+.markdown-body :deep(img) {
+  border-radius: 10px !important;
+  transition: transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1),
+    box-shadow 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+  will-change: transform, box-shadow;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+.markdown-body :deep(img):hover {
+  transform: scale(1.01) translateY(-6px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2), 0 6px 10px rgba(0, 0, 0, 0.1);
+  z-index: 5;
 }
 
 :deep(.markdown-body blockquote) {
