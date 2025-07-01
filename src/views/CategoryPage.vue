@@ -84,14 +84,29 @@
             <div v-for="article in displayedArticles" :key="article.id" :id="`article-${article.id}`"
               class="article-card glass-panel" :class="{ 'highlight': article.highlight }" ref="articleRefs"
               @click.stop="handleArticleClick(article)">
-              <div class="article-header">
-                <h2 class="article-title">{{ article.title }}</h2>
-                <div class="article-date">{{ formatDate(article.updateTime) }}
-                  <div class="click_times" style="color: blanchedalmond;">点击量：{{ article.clickTimes }}</div>
-                </div>
 
+              <!-- 文章头部信息 -->
+              <div class="article-header">
+                <div class="article-title-section">
+                  <h2 class="article-title">{{ article.title }}</h2>
+                  <div class="article-meta">
+                    <div class="meta-item">
+                      <el-icon class="meta-icon">
+                        <Calendar />
+                      </el-icon>
+                      <span class="meta-text">{{ formatDate(article.updateTime) }}</span>
+                    </div>
+                    <div class="meta-item">
+                      <el-icon class="meta-icon">
+                        <View />
+                      </el-icon>
+                      <span class="meta-text">{{ article.clickTimes }}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
+              <!-- 文章内容区域 -->
               <div class="article-body">
                 <div class="article-content">
                   <p class="article-excerpt">{{ formatExcerpt(article.content) }}</p>
@@ -102,9 +117,10 @@
                   </div>
                 </div>
 
-                <div class="article-image" v-if="article.cover">
-                  <el-image :src="article.cover" :alt="article.title" :preview-src-list="[article.cover]"
-                    preview-teleported fit="cover" loading="lazy" class="article-img" @click.stop=''>
+                <div class="article-image">
+                  <el-image v-if="article.cover" :src="article.cover" :alt="article.title"
+                    :preview-src-list="[article.cover]" preview-teleported fit="cover" loading="lazy"
+                    class="article-img" @click.stop="">
                     <template #error>
                       <div class="image-error">
                         <el-icon>
@@ -114,6 +130,14 @@
                       </div>
                     </template>
                   </el-image>
+
+                  <!-- 默认封面 -->
+                  <div v-else class="default-cover">
+                    <el-icon class="default-cover-icon">
+                      <Document />
+                    </el-icon>
+                    <span class="default-cover-text">无封面</span>
+                  </div>
                 </div>
               </div>
 
@@ -143,7 +167,7 @@
 import { ref, reactive, computed, onMounted, nextTick, onUnmounted, watch } from 'vue'
 import {
   ArrowLeft, ArrowRight, Search, Filter, View, Star, Share,
-  HomeFilled, Bell, Message, Document, Loading, Timer, RefreshRight
+  HomeFilled, Bell, Message, Document, Loading, Timer, RefreshRight, Calendar
 } from '@element-plus/icons-vue'
 import { useRoute, useRouter } from 'vue-router'
 import { categoryGetService } from '@/api/category'
@@ -176,10 +200,44 @@ const displayedArticles = ref([])  // 当前显示的文章列表
 
 // 时间筛选相关
 const currentYear = new Date().getFullYear().toString()  // 当前年份
+const currentMonth = (new Date().getMonth() + 1).toString()  // 当前月份
+
+// 从 localStorage 获取保存的日期状态，如果没有则使用当前日期
+const getStoredDateState = (categoryId) => {
+  try {
+    const stored = localStorage.getItem(`category_date_${categoryId}`)
+    if (stored) {
+      const parsed = JSON.parse(stored)
+      return {
+        year: parsed.year || currentYear,
+        month: parsed.month || currentMonth,
+        activeYears: parsed.activeYears || [currentYear]
+      }
+    }
+  } catch (error) {
+    console.warn('读取保存的日期状态失败:', error)
+  }
+  return {
+    year: currentYear,
+    month: currentMonth,
+    activeYears: [currentYear]
+  }
+}
+
+// 保存日期状态到 localStorage
+const saveDateState = (categoryId, year, month, activeYears) => {
+  try {
+    const state = { year, month, activeYears }
+    localStorage.setItem(`category_date_${categoryId}`, JSON.stringify(state))
+  } catch (error) {
+    console.warn('保存日期状态失败:', error)
+  }
+}
+
 const years = ref([])  // 所有可选的年份数据
 const activeYears = ref([currentYear])  // 当前展开的年份面板
 const selectedYear = ref(currentYear)  // 当前选中的年份
-const selectedMonth = ref((new Date().getMonth() + 1).toString())  // 当前选中的月份
+const selectedMonth = ref(currentMonth)  // 当前选中的月份
 
 // 搜索和筛选状态
 const filterCondition = ref(1)
@@ -307,7 +365,10 @@ const selectMonth = async (year, month) => {
   selectedYear.value = year
   selectedMonth.value = month
 
-  // // 重置并重新加载
+  // 保存日期状态到 localStorage
+  saveDateState(route.params.slug, year, month, activeYears.value)
+
+  // 重置并重新加载
   await resetAndLoad()
 
   // 滚动到顶部
@@ -332,11 +393,17 @@ watch(() => route.params.slug, async (newSlug) => {
     console.log('分类变化，加载新分类：', newSlug)
     // 获取新分类信息
     await getCategory(newSlug)
-    // 重置状态
+
+    // 从 localStorage 恢复该分类的日期状态
+    const storedState = getStoredDateState(newSlug)
+    selectedYear.value = storedState.year
+    selectedMonth.value = storedState.month
+    activeYears.value = storedState.activeYears
+
+    // 重置其他状态
     searchQuery.value = ''
     filterCondition.value = 1
-    selectedYear.value = currentYear
-    selectedMonth.value = (new Date().getMonth() + 1).toString()
+
     // 重新加载文章
     await resetAndLoad()
   }
@@ -347,10 +414,7 @@ watch(() => route.params.slug, async (newSlug) => {
 // 处理年份变化
 const dateMapArticleCount = ref({})
 const handleYearChange = (activeNames) => {
-
   console.log('年份变化，当前展开的年份：', activeNames)
-
-
 
   // 如果年份面板被关闭，则重置为当前年份
   if (!activeNames || activeNames.length === 0) {
@@ -358,6 +422,9 @@ const handleYearChange = (activeNames) => {
   } else {
     activeYears.value = activeNames
   }
+
+  // 保存展开状态到 localStorage
+  saveDateState(route.params.slug, selectedYear.value, selectedMonth.value, activeYears.value)
 }
 
 // 格式化日期
@@ -409,6 +476,16 @@ const handleReset = async () => {
   displayedArticles.value = []
   noMoreArticles.value = false
 
+  // 重置日期状态为当前日期
+  selectedYear.value = currentYear
+  selectedMonth.value = currentMonth
+  activeYears.value = [currentYear]
+
+  // 清除 localStorage 中保存的日期状态
+  if (route.params.slug) {
+    localStorage.removeItem(`category_date_${route.params.slug}`)
+  }
+
   // 重新加载第一页
   await resetAndLoad()
 }
@@ -427,6 +504,14 @@ onMounted(() => {
   // 初始化数据
   updateYearsAndMonths()
 
+  // 如果是首次加载，从 localStorage 恢复当前分类的日期状态
+  if (route.params.slug) {
+    const storedState = getStoredDateState(route.params.slug)
+    selectedYear.value = storedState.year
+    selectedMonth.value = storedState.month
+    activeYears.value = storedState.activeYears
+  }
+
   // 监听页面可见性变化
   document.addEventListener('visibilitychange', handleVisibilityChange)
 
@@ -434,7 +519,6 @@ onMounted(() => {
   if (articlesContainer.value) {
     articlesContainer.value.addEventListener('scroll', handleScroll)
   }
-
 })
 
 onUnmounted(() => {
@@ -524,32 +608,31 @@ const handleScroll = () => {
   font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   min-height: 100vh;
   width: 100%;
-  background: linear-gradient(135deg, #1a1c2a, #2d3154, #31346e);
-  color: #ffffff;
-  --primary-color: #bcbde9;
-  --primary-light: #818cf8;
-  --primary-dark: #4f46e5;
-  --bg-color: rgba(28, 28, 45, 0.65);
-  --bg-color-light: rgba(44, 44, 66, 0.75);
-  --text-color: #ffffff;
-  --text-color-secondary: rgba(235, 235, 245, 0.6);
-  --border-color: rgba(99, 102, 241, 0.2);
-  --accent-color: #818cf8;
+  background: #fff;
+  color: #222;
+  --primary-color: #3b82f6;
+  --primary-light: #93c5fd;
+  --primary-dark: #2563eb;
+  --bg-color: #fff;
+  --bg-color-light: #f3f6fa;
+  --text-color: #222;
+  --text-color-secondary: #666;
+  --border-color: #e5e7eb;
+  --accent-color: #3b82f6;
   --sidebar-width: 150px;
   --sidebar-collapsed-width: 50px;
   --header-height: 60px;
   letter-spacing: 0.015em;
   overflow: hidden;
-  /* 防止整个容器滚动 */
 }
 
 .glass-panel {
-  background: rgba(28, 28, 45, 0.65);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: #fff;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   border-radius: 1.5rem;
-  border: 1px solid rgba(99, 102, 241, 0.2);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 4px 16px rgba(60, 100, 180, 0.06);
 }
 
 .main-layout {
@@ -713,17 +796,13 @@ const handleScroll = () => {
 
 .content-header {
   padding: 1.5rem;
-  background: rgba(28, 28, 45, 0.75);
-  border-bottom: 1px solid rgba(99, 102, 241, 0.2);
+  background: #f3f6fa;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .content-header h1 {
-  font-size: 1.75rem;
-  font-weight: 600;
-  background: linear-gradient(135deg, #fee4a9, #e63007);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  margin: 0;
+  font-size: 1.25rem;
+  margin-bottom: 0.2rem;
 }
 
 .header-actions {
@@ -736,90 +815,129 @@ const handleScroll = () => {
 }
 
 .search-group {
+  background: rgba(255, 255, 255, 0.35);
+  /* Remove blur effect */
+  /* backdrop-filter: blur(18px) saturate(1.5); */
+  /* -webkit-backdrop-filter: blur(18px) saturate(1.5); */
+  border-radius: 0.8rem;
+  border: 1px solid #f0f1f3;
+  box-shadow: 0 1px 6px rgba(60, 100, 180, 0.04);
+  padding: 0.3rem 0.7rem;
+  gap: 0.5rem;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  background: rgba(28, 28, 45, 0.4);
-  padding: 0.5rem;
-  border-radius: 1rem;
-  border: 1px solid rgba(99, 102, 241, 0.15);
-  transition: all 0.3s ease;
+  transition: box-shadow 0.25s, transform 0.25s, background 0.3s, border-color 0.3s;
 }
 
 .search-group:hover {
-  background: rgba(28, 28, 45, 0.6);
-  border-color: rgba(99, 102, 241, 0.3);
+  /* Only keep transform, remove any blur effect */
+  transform: translateY(-2px) scale(1.03);
 }
 
 .search-input {
-  width: 300px;
+  width: 150px;
 }
 
 .search-input :deep(.el-input__wrapper) {
-  background: transparent !important;
+  background: #fff !important;
+  border-radius: 0.7rem !important;
+  border: none !important;
   box-shadow: none !important;
-  padding: 0 0.5rem;
+  padding: 0 0.7rem !important;
+  transition: box-shadow 0.2s, background 0.2s;
+}
+
+.search-input :deep(.el-input__wrapper):hover,
+.search-input :deep(.el-input__wrapper):focus {
+  background: rgba(255, 255, 255, 0.7) !important;
+  box-shadow: 0 2px 8px rgba(60, 100, 180, 0.10) !important;
 }
 
 .search-input :deep(.el-input__inner) {
-  background: transparent;
-  border: none;
-  color: #ffffff;
+  background: transparent !important;
+  border: none !important;
+  color: #222 !important;
   font-size: 0.95rem;
-  height: 40px;
-}
-
-.search-input :deep(.el-input__inner):focus {
-  border: none;
-  box-shadow: none;
+  height: 36px;
+  box-shadow: none !important;
 }
 
 .search-input :deep(.el-input__inner)::placeholder {
-  color: rgba(235, 235, 245, 0.5);
+  color: #bbb !important;
+  opacity: 1;
 }
 
 .filter-group {
-  background: var(--bg-color-light);
-  padding: 0.25rem;
+  background: transparent;
+  padding: 0;
   border-radius: 0.75rem;
   margin-left: auto;
-  /* 将按钮组推到右边 */
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: none;
 }
 
-/* 优化按钮组的样式 */
 :deep(.el-radio-button__inner) {
   background: transparent !important;
-  border: 1px solid rgba(99, 102, 241, 0.3) !important;
+  border: none !important;
   color: var(--text-color-secondary) !important;
   transition: all 0.3s ease;
-  padding: 0.5rem 1.25rem;
+  padding: 0.4rem 0.9rem;
   font-weight: 500;
+  box-shadow: none !important;
 }
 
 :deep(.el-radio-button__original-radio:checked + .el-radio-button__inner) {
-  background: linear-gradient(135deg, hsl(239, 62%, 76%), #0b92a4) !important;
-  color: white !important;
-  border-color: transparent !important;
-  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+  background: #eaf6fb !important;
+  color: #2563eb !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.search-group .el-button,
+.search-group .el-button:focus,
+.search-group .el-button:hover,
+.search-group .el-button:active {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #2563eb !important;
+  /* 可自定义主色 */
+  transition: none !important;
+  font-size: 1rem !important;
+  /* 保持按钮字体大小不变 */
+}
+
+.search-group .el-button.is-primary {
+  background: transparent !important;
+  color: #2563eb !important;
+  font-size: 1rem !important;
+  /* 保持按钮字体大小不变 */
+}
+
+.search-group .el-button:hover {
+  color: #1d4ed8 !important;
+  background: #f5f7fa !important;
+  font-size: 1rem !important;
+  /* 保持按钮字体大小不变 */
+}
+
+.search-group .el-button,
+.search-group .el-input__wrapper {
+  height: 36px !important;
+  min-height: 36px !important;
+  line-height: 36px !important;
 }
 
 .articles-container {
   flex: 1;
   overflow-y: auto;
-  /* 只允许垂直滚动 */
   overflow-x: hidden;
-  /* 禁止水平滚动 */
   padding-right: 0.625rem;
   height: calc(100vh - var(--header-height) - 8rem);
-  /* 增加底部空间，确保分页下拉框显示 */
   position: relative;
-  /* 自定义滚动条样式 */
   scrollbar-width: thin;
-  scrollbar-color: rgba(40, 43, 225, 0.3) transparent;
+  scrollbar-color: #c3cfe2 transparent;
 }
 
-/* Webkit浏览器的滚动条样式 */
 .articles-container::-webkit-scrollbar {
   width: 6px;
 }
@@ -829,83 +947,116 @@ const handleScroll = () => {
 }
 
 .articles-container::-webkit-scrollbar-thumb {
-  background: rgba(99, 102, 241, 0.3);
+  background: #c3cfe2;
   border-radius: 3px;
 }
 
 .articles-container::-webkit-scrollbar-thumb:hover {
-  background: rgba(99, 102, 241, 0.5);
+  background: #93c5fd;
 }
 
 .articles-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  padding-bottom: 3rem;
-  /* 增加底部内边距，为分页留出更多空间 */
+  gap: 1.2rem;
+  padding-bottom: 1.2rem;
   min-height: 100%;
-  /* 确保内容至少占满容器高度 */
 }
 
 .article-card {
   padding: 1.5rem;
-  transition: all 0.3s ease;
-  background: rgba(28, 28, 45, 0.65);
-  border: 1px solid rgba(99, 102, 241, 0.2);
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
+  border-radius: 1rem;
+  background: #fff;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.article-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
 }
 
 .article-card:hover {
-  transform: translateY(-3px);
-  background: rgba(28, 28, 45, 0.75);
-  border-color: rgba(99, 102, 241, 0.4);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+  border-color: #e2e8f0;
+}
+
+.article-card:hover::before {
+  transform: scaleX(1);
 }
 
 .article-header {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: flex-start;
-  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.article-title-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 .article-title {
-  font-size: 1.35rem;
-  font-weight: 600;
-  color: #ffffff;
-  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e293b;
   line-height: 1.4;
-  background: linear-gradient(135deg, #fff, #818cf8);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  margin: 0;
+  letter-spacing: -0.025em;
+  transition: color 0.2s ease;
 }
 
-.article-date {
-  font-size: 0.875rem;
-  color: var(--text-color-secondary);
-  font-weight: 500;
+.article-card:hover .article-title {
+  color: #3b82f6;
+}
+
+.article-meta {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.25rem;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
 }
 
-.click_times {
-  color: var(--accent-color) !important;
-  font-weight: 600;
-  padding: 0.25rem 0.75rem;
-  background: rgba(129, 140, 248, 0.1);
-  border-radius: 1rem;
-  font-size: 0.8rem;
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #64748b;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.meta-icon {
+  font-size: 1rem;
+  color: #94a3b8;
+  transition: color 0.2s ease;
+}
+
+.meta-text {
+  font-weight: 500;
+  letter-spacing: 0.025em;
+}
+
+.article-card:hover .meta-icon {
+  color: #3b82f6;
 }
 
 .article-body {
   display: grid;
-  grid-template-columns: 1fr 200px;
+  grid-template-columns: 1fr auto;
   gap: 1.5rem;
-  min-height: 180px;
+  align-items: start;
 }
 
 .article-content {
@@ -916,138 +1067,170 @@ const handleScroll = () => {
 
 .article-excerpt {
   font-size: 0.95rem;
-  line-height: 1.7;
-  color: rgba(235, 235, 245, 0.85);
+  line-height: 1.6;
+  color: #475569;
+  margin: 0;
   font-weight: 400;
-  flex: 1;
-}
-
-.article-image {
-  width: 200px;
-  height: 180px;
-  border-radius: 1rem;
+  letter-spacing: 0.01em;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  position: relative;
-}
-
-.article-image :deep(.el-image) {
-  width: 100%;
-  height: 100%;
-  transition: all 0.5s ease;
-}
-
-.article-image :deep(.el-image:hover) {
-  transform: scale(1.05);
 }
 
 .article-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 0.5rem;
 }
 
 .article-tag {
-  background: rgba(99, 102, 241, 0.15) !important;
-  border: 1px solid rgba(99, 102, 241, 0.3) !important;
-  color: #818cf8 !important;
-  font-size: 0.8rem !important;
-  font-weight: 500 !important;
+  font-size: 0.75rem !important;
   padding: 0.25rem 0.75rem !important;
-  border-radius: 0.75rem !important;
-  transition: all 0.3s ease !important;
+  border-radius: 1rem !important;
+  font-weight: 500 !important;
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #64748b !important;
+  transition: all 0.2s ease !important;
 }
 
 .article-tag:hover {
-  background: rgba(99, 102, 241, 0.25) !important;
-  border-color: rgba(99, 102, 241, 0.4) !important;
+  background: #3b82f6 !important;
+  color: white !important;
+  border-color: #3b82f6 !important;
   transform: translateY(-1px);
+}
+
+.article-image {
+  width: 140px;
+  height: 100px;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  background: #f8fafc;
+}
+
+.article-card:hover .article-image {
+  transform: scale(1.05);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.article-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+  display: block;
+}
+
+.article-card:hover .article-img {
+  transform: scale(1.1);
+}
+
+.image-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #94a3b8;
+  font-size: 0.875rem;
+  gap: 0.5rem;
+}
+
+.default-cover {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  border: 2px dashed #cbd5e1;
+  border-radius: 0.75rem;
+  color: #64748b;
+  transition: all 0.3s ease;
+}
+
+.article-card:hover .default-cover {
+  background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+.default-cover-icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.7;
+}
+
+.default-cover-text {
+  font-size: 0.75rem;
+  font-weight: 500;
+  opacity: 0.8;
+}
+
+/* 响应式布局调整 */
+@media (max-width: 768px) {
+  .article-card {
+    padding: 1.25rem;
+  }
+
+  .article-body {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .article-image {
+    width: 100%;
+    height: 140px;
+  }
+
+  .article-meta {
+    gap: 1rem;
+  }
+
+  .article-title {
+    font-size: 1.125rem;
+  }
 }
 
 .loading-more,
 .no-more-articles {
   text-align: center;
-  padding: 1.25rem;
-  color: var(--text-color-secondary);
+  padding: 2rem;
+  color: #64748b;
   font-size: 0.875rem;
   font-weight: 500;
+  background: #f8fafc;
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+  margin-top: 1rem;
 }
 
-/* 响应式布局调整 */
-@media (max-width: 768px) {
-  .article-body {
-    grid-template-columns: 1fr;
-  }
+.loading-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
 
-  .article-image {
-    width: 100%;
-    height: 200px;
-    order: -1;
-  }
-
-  .article-header {
-    grid-template-columns: 1fr;
-  }
-
-  .article-date {
-    align-items: flex-start;
-  }
-
-  .search-input {
-    width: 100%;
-  }
-
-  .search-group {
-    flex-direction: column;
-    width: 100%;
-  }
-
-  .header-actions {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .filter-group {
-    margin-left: 0;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-  }
-
-  .search-group {
-    width: 100%;
-  }
-
-  .articles-container {
-    height: calc(100vh - var(--header-height) - 10rem);
-    /* 在移动端增加更多空间 */
-  }
+.loading-more .el-icon {
+  font-size: 1.25rem;
+  color: #3b82f6;
 }
 
 .description-container {
-  margin: 1rem 1.5rem;
-  padding: 1.25rem;
-  background: rgba(35, 35, 141, 0.45);
-  border: 1px solid rgba(99, 102, 241, 0.15);
-  border-radius: 1rem;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-}
-
-.description-container:hover {
-  background: rgba(44, 44, 66, 0.55);
-  border-color: rgba(99, 102, 241, 0.25);
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
+  max-width: 320px;
+  min-width: 120px;
+  padding: 0.5rem 0.8rem;
+  margin: 0.3rem 0 0.3rem 1.2rem;
 }
 
 .description-title {
-  color: rgba(235, 235, 245, 0.9);
-  font-size: 1.1rem;
-  font-weight: 500;
-  margin: 0;
-  line-height: 1.6;
+  font-size: 0.85rem;
 }
 </style>

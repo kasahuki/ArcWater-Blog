@@ -14,9 +14,19 @@
 
       <el-sub-menu index="categories">
         <template #title>Category</template>
-        <el-menu-item v-for="item in categories" :key="item.id" :index="`/category/${item.id}`">
-          {{ item.categoryName }}
-        </el-menu-item>
+        <div class="category-grid">
+          <router-link v-for="item in categories" :key="item.id" :to="`/category/${item.id}`"
+            class="category-grid-item">
+            <div class="category-card">
+              <div class="category-icon">
+                <el-icon>
+                  <Folder />
+                </el-icon>
+              </div>
+              <div class="category-name">{{ item.categoryName }}</div>
+            </div>
+          </router-link>
+        </div>
       </el-sub-menu>
 
       <el-menu-item index="/about">About</el-menu-item>
@@ -53,7 +63,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { Search, Moon, Sunny } from '@element-plus/icons-vue'
+import { Search, Moon, Sunny, Folder } from '@element-plus/icons-vue'
 import { categoryListService } from '@/api/category'
 import { getCategories } from '@/util/common'
 import { useCategoryStore } from '@/stores/categoryStore'
@@ -254,5 +264,88 @@ a {
 .theme-toggle-btn:hover {
   transform: rotate(30deg);
   color: var(--primary-color, #409eff);
+}
+
+/* 分类网格样式 */
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  padding: 16px;
+  min-width: 300px;
+  max-width: 500px;
+}
+
+.category-grid-item {
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.3s ease;
+}
+
+.category-grid-item:hover {
+  transform: translateY(-2px);
+}
+
+.category-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 12px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+  min-height: 80px;
+}
+
+.category-grid-item:hover .category-card {
+  background: linear-gradient(135deg, #409eff 0%, #337ecc 100%);
+  border-color: #409eff;
+  box-shadow: 0 8px 25px rgba(64, 158, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.category-icon {
+  margin-bottom: 8px;
+  font-size: 24px;
+  color: #6c757d;
+  transition: all 0.3s ease;
+}
+
+.category-grid-item:hover .category-icon {
+  color: white;
+  transform: scale(1.1);
+}
+
+.category-name {
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+  color: #495057;
+  transition: all 0.3s ease;
+}
+
+.category-grid-item:hover .category-name {
+  color: white;
+}
+
+/* 暗黑模式下的样式 */
+:deep(.dark-mode) .category-card {
+  background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+  border-color: #34495e;
+}
+
+:deep(.dark-mode) .category-icon {
+  color: #bdc3c7;
+}
+
+:deep(.dark-mode) .category-name {
+  color: #ecf0f1;
+}
+
+:deep(.dark-mode) .category-grid-item:hover .category-card {
+  background: linear-gradient(135deg, #409eff 0%, #337ecc 100%);
+  border-color: #409eff;
 }
 </style>

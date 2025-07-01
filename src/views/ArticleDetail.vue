@@ -14,7 +14,7 @@
             <div class="article-tags">
               <el-tag size="small" effect="plain" type="primary">{{ categoryName || '未分类' }}</el-tag>
               <el-tag size="small" effect="plain" type="info" v-for="tag in (article.tags || [])" :key="tag">{{ tag
-                }}</el-tag>
+              }}</el-tag>
             </div>
           </div>
 
@@ -52,7 +52,7 @@
                               d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8zm.5-13H11v6l5.2 3.2.8-1.2-4.5-2.7V7z" />
                           </svg>
                           <span>{{ item.updateTime ? dayjs(item.updateTime).format('YYYY-MM-DD HH:mm') : '未知时间'
-                          }}</span>
+                            }}</span>
                         </div>
                         <div class="info-item views">
                           <svg class="icon" viewBox="0 0 24 24">
@@ -76,14 +76,23 @@
       <el-col :xs="24" :md="6">
         <div class="sidebar">
           <div class="sidebar-section toc">
-            <h3>目录</h3>
+            <div class="toc-header">
+              <h3>目录</h3>
+              <div class="toc-tree-btns">
+                <button class="toc-tree-btn" @click="expandAllToc" title="全部展开">
+                  <el-icon>
+                    <ArrowDown />
+                  </el-icon>
+                </button>
+                <button class="toc-tree-btn" @click="collapseAllToc" title="全部折叠">
+                  <el-icon>
+                    <ArrowUp />
+                  </el-icon>
+                </button>
+              </div>
+            </div>
             <ul class="toc-list">
-              <li v-for="item in tocItems" :key="item.id">
-                <a :href="'#' + item.id" :class="{ active: item.isActive }"
-                  :style="{ paddingLeft: (item.level - 1) * 12 + 'px' }" @click.prevent="handleTocClick(item.id)">
-                  {{ item.title }}
-                </a>
-              </li>
+              <TocTreeNode v-for="item in tocTree" :key="item.id" :node="item" @toc-click="handleTocClick" />
             </ul>
           </div>
 
@@ -132,56 +141,94 @@
 
     <!-- 全屏代码抽屉 -->
     <div class="fullscreen-drawer" :class="{ active: isFullscreenActive }">
-      <div class="drawer-header">
+      <div class="drawer-header" @dblclick="closeFullscreen">
         <span class="drawer-title">{{ currentLanguage }}</span>
-        <div class="drawer-actions">
-          <button class="drawer-btn" @click="copyFullscreenCode">复制</button>
-          <button class="drawer-btn close-btn" @click="closeFullscreen">关闭</button>
-        </div>
+        <span class="apple-dots">
+          <span class="dot dot-red" @click="closeFullscreen"></span>
+          <span class="dot dot-yellow" @click="copyFullscreenCode"></span>
+          <span class="dot dot-green" @click="toggleFullscreenBg"></span>
+        </span>
       </div>
-      <div class="drawer-content">
+      <div class="drawer-content" :class="{ 'white-bg': fullscreenWhiteBg }">
         <pre><code :class="`language-${currentLanguage}`" ref="fullscreenCodeBlock">{{ currentCode }}</code></pre>
       </div>
     </div>
+
+    <div class="float-btns-group">
+      <div class="float-btn toc-btn" @click="openTocDrawer">
+        <el-icon>
+          <Menu />
+        </el-icon>
+      </div>
+      <div class="float-btn share-btn" ref="shareBtnRef" @click="toggleShareCapsule">
+        <el-icon>
+          <Share />
+        </el-icon>
+      </div>
+      <div v-if="showFloatBtns" class="float-btn top-btn" @click="scrollToTop">
+        <el-icon>
+          <ArrowUp />
+        </el-icon>
+      </div>
+      <!-- 竖直胶囊弹窗 -->
+      <transition name="capsule-fade">
+        <div v-if="showShareCapsule" class="share-capsule-vertical" @click.stop>
+          <MoreButton @click="copyShareLink">复制链接</MoreButton>
+          <MoreButton @click="downloadCurrentHtml">下载HTML</MoreButton>
+        </div>
+      </transition>
+    </div>
+    <transition name="drawer-slide">
+      <div v-if="showTocDrawer" class="toc-drawer-mask" @click="handleDrawerMaskClick">
+        <div class="toc-drawer-glass" @click.stop>
+          <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 15px;">
+            <span class="apple-dots">
+              <span class="dot dot-red" @click="closeTocDrawer"></span>
+              <span class="dot dot-yellow"></span>
+              <span class="dot dot-green"></span>
+            </span>
+            <span class="drawer-title">目录</span>
+            <div class="toc-tree-btns">
+              <button class="toc-tree-btn" @click="expandAllToc" title="全部展开">
+                <el-icon>
+                  <ArrowDown />
+                </el-icon>
+              </button>
+              <button class="toc-tree-btn" @click="collapseAllToc" title="全部折叠">
+                <el-icon>
+                  <ArrowUp />
+                </el-icon>
+              </button>
+            </div>
+          </div>
+          <ul class="drawer-toc-list">
+            <TocTreeNode v-for="item in tocTree" :key="item.id" :node="item" @toc-click="handleDrawerTocClick" />
+          </ul>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, nextTick, onUnmounted, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { Share } from '@element-plus/icons-vue'
+import { Share, ArrowUp, Menu, ArrowDown } from '@element-plus/icons-vue'
 import IconBar from '../components/IconBar.vue'
 import { articleDetailService, relatedArticleService, hotArticleService } from '@/api/article'
 import { categoryGetService } from '@/api/category'
 import { marked } from 'marked'
 import dayjs from 'dayjs'
-import Prism from 'prismjs'
-import 'prismjs/themes/prism-tomorrow.css'
-// 导入需要的语言支持
-import 'prismjs/components/prism-javascript'
-import 'prismjs/components/prism-typescript'
-import 'prismjs/components/prism-css'
-import 'prismjs/components/prism-markup'
-import 'prismjs/components/prism-java'
-import 'prismjs/components/prism-python'
-import 'prismjs/components/prism-c'
-import 'prismjs/components/prism-cpp'
-import 'prismjs/components/prism-csharp'
-import 'prismjs/components/prism-go'
-import 'prismjs/components/prism-rust'
-import 'prismjs/components/prism-bash'
-import 'prismjs/components/prism-yaml'
-import 'prismjs/components/prism-json'
-import 'prismjs/components/prism-markdown'
-import 'prismjs/components/prism-sql'
-import 'prismjs/plugins/line-numbers/prism-line-numbers.css'
-import 'prismjs/plugins/line-numbers/prism-line-numbers'
+import { highlightAll } from '@/util/prism-language'
 // 添加dayjs插件支持相对时间
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/zh-cn' // 导入中文语言包
 // 激活插件
 dayjs.extend(relativeTime)
 dayjs.locale('zh-cn') // 使用中文
+
+import MoreButton from '@/components/MoreButton.vue'
+import TocTreeNode from '../components/TocTreeNode.vue'
 
 //#region 状态变量定义
 const route = useRoute()
@@ -194,6 +241,7 @@ const isFullscreenActive = ref(false)
 const currentCode = ref('')
 const currentLanguage = ref('plaintext')
 const fullscreenCodeBlock = ref(null)
+const fullscreenWhiteBg = ref(false)
 
 // 初始化文章数据结构
 const article = ref({
@@ -211,6 +259,9 @@ const relatedArticles = ref([])
 
 // 热门文章
 const popularArticles = ref([])
+
+const showShareCapsule = ref(false)
+const shareBtnRef = ref(null)
 //#endregion
 
 //#region Markdown配置与处理
@@ -233,9 +284,18 @@ marked.setOptions({
   }
 })
 
+// 支持==高亮==语法
+const highlightMarkdown = (md) => {
+  // 只处理非代码块内的==内容==
+  return md.replace(/==([^=]+)==/g, '<span class="md-highlight">$1</span>');
+}
+
 // 处理文章内容，手动添加按钮到代码块
 const processArticleContent = (htmlContent) => {
   if (!htmlContent) return '';
+
+  // 在处理前先应用高亮
+  htmlContent = htmlContent.replace(/==([^=]+)==/g, '<span class="md-highlight">$1</span>');
 
   // 匹配所有代码块
   return htmlContent.replace(/<pre><code class="language-([^"]+)">([\s\S]*?)<\/code><\/pre>/g, (match, language, code) => {
@@ -275,43 +335,54 @@ const extractHeaders = (content) => {
   const headers = []
   const lines = content.split('\n')
   const headerPattern = /^(#{1,6})\s+(.+)$/
+  let inCodeBlock = false
+  let codeBlockFence = ''
 
-  lines.forEach((line, index) => {
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]
+    // 检查代码块起止
+    const codeBlockStart = line.match(/^(```|~~~)/)
+    if (codeBlockStart) {
+      if (!inCodeBlock) {
+        inCodeBlock = true
+        codeBlockFence = codeBlockStart[1]
+        continue
+      } else if (inCodeBlock && line.startsWith(codeBlockFence)) {
+        inCodeBlock = false
+        codeBlockFence = ''
+        continue
+      }
+    }
+    if (inCodeBlock) continue // 跳过代码块内
+
     const match = line.match(headerPattern)
     if (match) {
       const level = match[1].length
       const title = match[2].trim()
-
-      // 改进ID生成逻辑，处理特殊字符
+      // 高亮处理
+      const htmlTitle = title.replace(/==([^=]+)==/g, '<span class="md-highlight">$1</span>')
       let id = title
         .toLowerCase()
-        .replace(/[^\w\s-]/g, '') // 移除特殊字符
-        .replace(/\s+/g, '-') // 空格替换为连字符
-        .replace(/-+/g, '-') // 多个连字符替换为单个
-        .replace(/^-+|-+$/g, '') // 移除首尾连字符
-
-      // 如果ID为空，使用索引作为备用
-      if (!id) {
-        id = `header-${index}`
-      }
-
-      // 确保ID唯一性
+        .replace(/[^\w\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-+|-+$/g, '')
+      if (!id) id = `header-${i}`
       let uniqueId = id
       let counter = 1
       while (headers.some(h => h.id === uniqueId)) {
         uniqueId = `${id}-${counter}`
         counter++
       }
-
       headers.push({
         level,
-        title,
+        title, // 原始文本
+        htmlTitle, // 高亮HTML
         id: uniqueId,
         isActive: false
       })
     }
-  })
-
+  }
   return headers
 }
 
@@ -390,6 +461,10 @@ const closeFullscreen = () => {
   document.body.style.overflow = '' // 恢复滚动
 }
 
+const toggleFullscreenBg = () => {
+  fullscreenWhiteBg.value = !fullscreenWhiteBg.value
+}
+
 // 显示提示信息
 const showToast = (message, type = 'success') => {
   // 检查是否已有toast
@@ -457,7 +532,7 @@ const getArticleDetail = async () => {
       })
 
       // 转换 Markdown 为 HTML
-      const htmlContent = marked(res.data.content)
+      const htmlContent = marked(highlightMarkdown(res.data.content))
 
       // 处理HTML内容，添加代码块按钮
       res.data.content = processArticleContent(htmlContent)
@@ -584,16 +659,19 @@ onMounted(() => {
 
   // 监听滚动事件，实现目录高亮
   window.addEventListener('scroll', handleScroll)
+  window.addEventListener('scroll', handleFloatBtnShow)
 })
 
 // 在组件卸载时清理
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll);
+  window.removeEventListener('scroll', handleFloatBtnShow);
   window._copyCode = null;
   window._showFullscreen = null;
   if (isFullscreenActive.value) {
     document.body.style.overflow = ''; // 恢复滚动
   }
+  document.removeEventListener('click', handleCapsuleOutsideClick)
 });
 //#endregion
 
@@ -621,934 +699,144 @@ const formatNumber = (clickTimes) => {
   }
 }
 //#endregion
+
+// 回到顶部方法
+const scrollToTop = () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+// 目录抽屉显示状态
+const showTocDrawer = ref(false)
+const openTocDrawer = () => { showTocDrawer.value = true }
+const closeTocDrawer = () => { showTocDrawer.value = false }
+
+// 点击遮罩关闭目录抽屉
+const handleDrawerMaskClick = (e) => {
+  // 只在点击遮罩本身时关闭
+  if (e.target.classList.contains('toc-drawer-mask')) closeTocDrawer()
+}
+
+// 页面滚动到一半才显示按钮
+const showFloatBtns = ref(false)
+const handleFloatBtnShow = () => {
+  const scrollY = window.scrollY || document.documentElement.scrollTop
+  const docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight
+  showFloatBtns.value = scrollY > docHeight / 2
+}
+
+// 目录抽屉点击目录项跳转
+const handleDrawerTocClick = (id) => {
+  closeTocDrawer()
+  nextTick(() => {
+    const el = document.getElementById(id)
+    if (el) el.scrollIntoView({ behavior: 'smooth' })
+  })
+}
+
+// 在 <script setup> 里添加
+const goToChatGPT = () => {
+  const url = `https://chat.openai.com/?code=${encodeURIComponent(currentCode.value)}`
+  window.open(url, '_blank')
+}
+
+const toggleShareCapsule = () => {
+  showShareCapsule.value = !showShareCapsule.value
+  if (showShareCapsule.value) {
+    nextTick(() => {
+      document.addEventListener('click', handleCapsuleOutsideClick)
+    })
+  } else {
+    document.removeEventListener('click', handleCapsuleOutsideClick)
+  }
+}
+
+const handleCapsuleOutsideClick = (e) => {
+  // 如果点击的不是分享按钮或胶囊本身，则关闭
+  if (
+    shareBtnRef.value &&
+    !shareBtnRef.value.contains(e.target) &&
+    !e.target.closest('.share-capsule-vertical')
+  ) {
+    showShareCapsule.value = false
+    document.removeEventListener('click', handleCapsuleOutsideClick)
+  }
+}
+
+const copyShareLink = () => {
+  const url = window.location.origin + '/article/' + articleId.value
+  navigator.clipboard.writeText(url).then(() => {
+    showToast('分享链接已复制到剪贴板')
+  }).catch(() => {
+    showToast('复制失败', 'error')
+  })
+  showShareCapsule.value = false
+  document.removeEventListener('click', handleCapsuleOutsideClick)
+}
+
+const downloadCurrentHtml = () => {
+  const html = document.documentElement.outerHTML
+  const blob = new Blob([html], { type: 'text/html' })
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = `article-${articleId.value}.html`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  showToast('HTML页面已下载')
+  showShareCapsule.value = false
+  document.removeEventListener('click', handleCapsuleOutsideClick)
+}
+
+// 目录树形结构转换
+const buildTocTree = (flatList) => {
+  const root = []
+  const stack = []
+  flatList.forEach(item => {
+    item.children = []
+    item.isCollapsed = false
+  })
+  for (let i = 0; i < flatList.length; i++) {
+    const item = flatList[i]
+    while (stack.length && stack[stack.length - 1].level >= item.level) {
+      stack.pop()
+    }
+    if (stack.length === 0) {
+      root.push(item)
+    } else {
+      stack[stack.length - 1].children.push(item)
+    }
+    stack.push(item)
+  }
+  return root
+}
+const tocTree = ref([])
+watch(tocItems, (newVal) => {
+  tocTree.value = buildTocTree(newVal)
+}, { immediate: true })
+
+// 一键展开/折叠
+const expandAllToc = () => {
+  const expand = (nodes) => nodes.forEach(n => { n.isCollapsed = false; if (n.children) expand(n.children) })
+  expand(tocTree.value)
+}
+const collapseAllToc = () => {
+  const collapse = (nodes) => nodes.forEach(n => { if (n.children && n.children.length) n.isCollapsed = true; if (n.children) collapse(n.children) })
+  collapse(tocTree.value)
+}
 </script>
-
 <style scoped>
-.article-detail {
-  max-width: 1450px;
-  margin-left: 9rem;
-}
-
-.article-container {
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: var(--card-shadow);
-  padding: 30px;
-  margin-bottom: 30px;
-}
-
-.article-header {
-  margin-bottom: 30px;
-}
-
-h1.article-title {
-  color: #1976d2;
-  font-size: 2.4rem;
-  font-weight: bold;
-  letter-spacing: 0.02em;
-  margin-bottom: 18px;
-  margin-top: 0;
-  line-height: 1.2;
-  transition: color 0.2s;
-}
-
-h1.article-title:hover {
-  color: #080c06;
-}
-
-.article-meta {
-  display: flex;
-  color: var(--lighter-text);
-  margin-bottom: 15px;
-}
-
-.article-date {
-  margin-right: 20px;
-}
-
-.article-tags {
-  display: flex;
-  gap: 10px;
-}
-
-.article-cover {
-  margin-bottom: 30px;
-}
-
-.article-cover img {
-  width: 100%;
-  border-radius: 8px;
-  max-height: 400px;
-  object-fit: cover;
-}
-
-.article-content {
-  font-size: 1.1rem;
-  line-height: 1.8;
-  overflow-wrap: break-word;
-  word-wrap: break-word;
-  word-break: break-word;
-  hyphens: auto;
-  max-width: 100%;
-}
-
-.article-content :deep(pre),
-.article-content :deep(code) {
-  white-space: pre-wrap;
-  overflow-x: auto;
-  max-width: 100%;
-}
-
-.article-content :deep(img) {
-  max-width: 100%;
-  height: auto;
-}
-
-.article-content h2 {
-  margin: 30px 0 15px;
-  font-size: 1.5rem;
-}
-
-.article-content p {
-  margin-bottom: 20px;
-}
-
-.code-block {
-  position: relative;
-  margin: 1.5em 0;
-  background: var(--el-bg-color);
-  border-radius: 8px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-}
-
-.code-block pre {
-  margin: 0;
-  padding: 16px;
-  overflow-x: auto;
-  max-width: 100%;
-}
-
-.code-block code {
-  font-family: 'SF Mono', Monaco, Menlo, Consolas, 'Courier New', monospace;
-  font-size: 0.9em;
-  line-height: 1.5;
-  padding: 0;
-  max-width: 100%;
-  display: block;
-}
-
-/* Markdown 内容样式 */
-:deep(.markdown-body) {
-  color: var(--el-text-color-primary);
-  font-size: 1.1rem;
-  line-height: 1.8;
-  overflow-wrap: break-word;
-  word-wrap: break-word;
-  max-width: 100%;
-}
-
-:deep(.markdown-body h1),
-:deep(.markdown-body h2),
-:deep(.markdown-body h3),
-:deep(.markdown-body h4),
-:deep(.markdown-body h5),
-:deep(.markdown-body h6) {
-  margin-top: 24px;
-  margin-bottom: 16px;
-  font-weight: 600;
-  line-height: 1.25;
-  max-width: 100%;
-  overflow-wrap: break-word;
-}
-
-:deep(.markdown-body p) {
-  margin-bottom: 16px;
-  max-width: 100%;
-  overflow-wrap: break-word;
-}
-
-:deep(.markdown-body *) {
-  max-width: 100%;
-}
-
-:deep(.markdown-body a) {
-  color: var(--el-color-primary);
-  text-decoration: none;
-  word-break: break-all;
-}
-
-:deep(.markdown-body pre) {
-  overflow-x: auto;
-  max-width: 100%;
-}
-
-.markdown-body :deep(img) {
-  border-radius: 10px !important;
-  transition: transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1),
-    box-shadow 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
-  will-change: transform, box-shadow;
-  border-radius: 6px;
-  display: inline-block;
-}
-
-.markdown-body :deep(img):hover {
-  transform: scale(1.01) translateY(-6px);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2), 0 6px 10px rgba(0, 0, 0, 0.1);
-  z-index: 5;
-}
-
-:deep(.markdown-body blockquote) {
-  padding: 0 1em;
-  color: var(--el-text-color-secondary);
-  border-left: 0.25em solid var(--el-border-color);
-  margin: 16px 0;
-  max-width: 100%;
-}
-
-:deep(.markdown-body table) {
-  display: block;
-  width: 100%;
-  overflow-x: auto;
-  margin: 16px 0;
-  border-spacing: 0;
-  border-collapse: collapse;
-}
-
-:deep(.markdown-body table th),
-:deep(.markdown-body table td) {
-  padding: 6px 13px;
-  border: 1px solid var(--el-border-color);
-  min-width: 60px;
-  word-break: break-word;
-}
-
-/* 代码高亮颜色 */
-:deep(.keyword) {
-  color: #569CD6;
-}
-
-:deep(.string) {
-  color: #CE9178;
-}
-
-:deep(.comment) {
-  color: #6A9955;
-  font-style: italic;
-}
-
-:deep(.number) {
-  color: #B5CEA8;
-}
-
-.article-footer {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 40px;
-  padding-top: 20px;
-  border-top: 1px solid var(--border-color);
-}
-
-.article-actions {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-.article-author {
-  display: flex;
-  align-items: center;
-  background-color: #f9f9f9;
-  padding: 15px;
-  border-radius: 8px;
-}
-
-.author-info {
-  margin-left: 15px;
-}
-
-.author-info h4 {
-  margin: 0 0 5px;
-}
-
-.author-info p {
-  margin: 0;
-  color: var(--light-text);
-}
-
-.related-articles {
-  margin: 48px 0;
-  padding: 0 16px;
-}
-
-.section-title {
-  position: relative;
-  margin-bottom: 32px;
-  display: flex;
-  align-items: center;
-}
-
-.section-title .title-text {
-  font-family: -apple-system, SF Pro Display, sans-serif;
-  font-size: 24px;
-  font-weight: 600;
-  background: linear-gradient(135deg, var(--el-color-primary), var(--el-color-primary-light-3));
-  -webkit-background-clip: text;
-  color: transparent;
-  margin-right: 16px;
-}
-
-.section-title .title-decoration {
-  flex: 1;
-  height: 2px;
-  background: linear-gradient(to right,
-      var(--el-color-primary-light-5),
-      transparent);
-}
-
-.article-link {
-  text-decoration: none;
-  display: block;
-  margin-bottom: 24px;
-}
-
-.article-card {
-  background: var(--el-bg-color);
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.article-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-}
-
-.article-card:hover .article-image {
-  transform: scale(1.05);
-}
-
-.article-card:hover .image-overlay {
-  opacity: 0.3;
-}
-
-.image-wrapper {
-  position: relative;
-  padding-top: 56.25%;
-  overflow: hidden;
-}
-
-.article-image {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.3s ease;
-}
-
-.image-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(to bottom,
-      transparent 0%,
-      rgba(0, 0, 0, 0.2) 100%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.card-content {
-  padding: 16px;
-}
-
-.article-title {
-  font-family: -apple-system, SF Pro Text, sans-serif;
-  font-size: 16px;
-  font-weight: 500;
-  color: var(--el-text-color-primary);
-  margin: 0 0 12px;
-  line-height: 1.4;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-
-.article-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 13px;
-  color: var(--el-text-color-secondary);
-}
-
-.info-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.info-item .icon {
-  width: 16px;
-  height: 16px;
-  fill: currentColor;
-}
-
-.info-item.time {
-  color: var(--el-text-color-secondary);
-}
-
-.info-item.views {
-  color: var(--el-color-primary);
-  font-weight: 500;
-}
-
-/* 侧边栏样式 */
-.sidebar {
-  position: sticky;
-  top: 80px;
-}
-
-.sidebar-section {
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: var(--card-shadow);
-  padding: 20px;
-  margin-bottom: 20px;
-}
-
-.sidebar-section h3 {
-  margin-top: 0;
-  margin-bottom: 15px;
-  font-size: 1.2rem;
-  position: relative;
-  padding-left: 12px;
-}
-
-.sidebar-section h3::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 4px;
-  height: 16px;
-  background-image: var(--primary-gradient);
-  border-radius: 2px;
-}
+@import "@/assets/css/ArticleDetail.css";
 
 .toc-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+  max-height: none !important;
+  overflow: visible !important;
 }
 
-.toc-list li {
-  margin-bottom: 12px;
-}
-
-.toc-list a {
-  text-decoration: none;
-  color: var(--el-text-color-regular);
-  display: block;
-  padding: 8px 12px;
-  border-radius: 6px;
-  transition: all 0.3s ease;
-  font-size: 0.95rem;
-  line-height: 1.4;
-}
-
-.toc-list a:hover,
-.toc-list a.active {
-  color: var(--el-color-primary);
-  background-color: var(--el-color-primary-light-9);
-}
-
-.author-profile {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-.author-profile h4 {
-  margin: 10px 0 5px;
-}
-
-.author-profile p {
-  margin: 0 0 15px;
-  color: var(--light-text);
-}
-
-.popular-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.popular-item {
-  margin-bottom: 16px;
-  transition: all 0.3s ease;
-  border-radius: 8px;
-}
-
-.popular-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  background-color: var(--el-color-primary-light-9);
-}
-
-.popular-link {
-  display: flex;
-  text-decoration: none;
-  color: var(--el-text-color-primary);
-  padding: 10px;
-  border-radius: 8px;
-}
-
-.popular-rank {
-  min-width: 24px;
-  height: 24px;
-  border-radius: 4px;
-  background-color: var(--el-fill-color);
-  color: var(--el-text-color-secondary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  font-weight: bold;
-  margin-right: 12px;
-}
-
-.popular-rank.rank-top {
-  background: linear-gradient(135deg, var(--el-color-danger) 0%, var(--el-color-danger-light-3) 100%);
-  color: white;
-  box-shadow: 0 2px 6px rgba(245, 108, 108, 0.4);
-}
-
-.popular-content {
-  flex: 1;
-  overflow: hidden;
-}
-
-.popular-title {
-  font-size: 14px;
-  font-weight: 500;
-  margin-bottom: 6px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--el-text-color-primary);
-  transition: color 0.3s;
-}
-
-.popular-item:hover .popular-title {
-  color: var(--el-color-primary);
-}
-
-.popular-meta {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-}
-
-.popular-views,
-.popular-time {
-  display: flex;
-  align-items: center;
-}
-
-.popular-views i {
-  margin-right: 4px;
-  font-size: 14px;
-}
-
-.tag-cloud {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.tag-item {
-  display: inline-block;
-  padding: 5px 10px;
-  background-color: #f0f0f0;
-  border-radius: 4px;
-  color: var(--light-text);
-  text-decoration: none;
-  font-size: 0.9rem;
-  transition: all 0.3s ease;
-}
-
-.tag-item:hover {
-  background-color: #e6f7ff;
-  color: #1890ff;
-}
-
-@media (max-width: 768px) {
-  .sidebar {
-    position: static;
-    margin-top: 30px;
-  }
-}
-
-/* Markdown 样式 */
-.markdown-body {
-  color: var(--el-text-color-primary);
-  line-height: 1.8;
+.toc-tree-btn {
+  padding: 2px 8px;
   font-size: 1.1rem;
-}
-
-.markdown-body :deep(h1),
-.markdown-body :deep(h2),
-.markdown-body :deep(h3),
-.markdown-body :deep(h4),
-.markdown-body :deep(h5),
-.markdown-body :deep(h6) {
-  margin-top: 24px;
-  margin-bottom: 16px;
-  font-weight: 600;
-  line-height: 1.25;
-  color: var(--el-text-color-primary);
-}
-
-.markdown-body :deep(h1) {
-  font-size: 2em;
-  padding-bottom: 0.3em;
-  border-bottom: 1px solid var(--el-border-color-light);
-}
-
-.markdown-body :deep(h2) {
-  font-size: 1.5em;
-  padding-bottom: 0.3em;
-  border-bottom: 1px solid var(--el-border-color-light);
-}
-
-.markdown-body :deep(h3) {
-  font-size: 1.25em;
-}
-
-.markdown-body :deep(p) {
-  margin-bottom: 16px;
-  line-height: 1.8;
-}
-
-.markdown-body :deep(code) {
-  padding: 0.2em 0.4em;
-  margin: 0;
-  font-size: 85%;
-  background-color: var(--el-fill-color-light);
-  border-radius: 3px;
-  font-family: 'SF Mono', Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-}
-
-.markdown-body :deep(pre) {
-  padding: 16px;
-  overflow: auto;
-  font-size: 85%;
-  line-height: 1.45;
-  background-color: var(--el-fill-color-light);
-  border-radius: 6px;
-  margin-bottom: 16px;
-}
-
-.markdown-body :deep(pre code) {
-  padding: 0;
-  margin: 0;
-  font-size: 100%;
-  word-break: normal;
-  white-space: pre;
-  background: transparent;
-  border: 0;
-}
-
-.markdown-body :deep(blockquote) {
-  padding: 0 1em;
-  color: var(--el-text-color-secondary);
-  border-left: 0.25em solid var(--el-border-color);
-  margin: 0 0 16px 0;
-}
-
-.markdown-body :deep(ul),
-.markdown-body :deep(ol) {
-  padding-left: 2em;
-  margin-bottom: 16px;
-}
-
-.markdown-body :deep(li) {
-  margin-bottom: 8px;
-}
-
-.markdown-body :deep(img) {
-  max-width: 100%;
-  box-sizing: border-box;
-  border-radius: 4px;
-  margin: 16px 0;
-}
-
-.markdown-body :deep(table) {
-  display: block;
-  width: 100%;
-  overflow: auto;
-  margin-bottom: 16px;
-  border-spacing: 0;
-  border-collapse: collapse;
-}
-
-.markdown-body :deep(table th),
-.markdown-body :deep(table td) {
-  padding: 6px 13px;
-  border: 1px solid var(--el-border-color);
-}
-
-.markdown-body :deep(table tr) {
-  background-color: var(--el-bg-color);
-  border-top: 1px solid var(--el-border-color);
-}
-
-.markdown-body :deep(table tr:nth-child(2n)) {
-  background-color: var(--el-fill-color-lighter);
-}
-
-/* 深色模式适配 */
-@media (prefers-color-scheme: dark) {
-
-  .markdown-body :deep(pre),
-  .markdown-body :deep(code) {
-    background-color: var(--el-bg-color-overlay);
-  }
-
-  .markdown-body :deep(blockquote) {
-    border-left-color: var(--el-border-color-darker);
-  }
-
-  .markdown-body :deep(table tr) {
-    background-color: var(--el-bg-color-overlay);
-  }
-
-  .markdown-body :deep(table tr:nth-child(2n)) {
-    background-color: var(--el-fill-color-dark);
-  }
-}
-
-/* Prism 代码块样式优化 */
-:deep(.markdown-body pre[class*="language-"]) {
-  margin: 1.5em 0;
-  padding: 1em;
-  overflow: auto;
-  border-radius: 8px;
-  background: #2d2d2d;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-}
-
-:deep(.markdown-body pre[class*="language-"]) code {
-  font-family: 'SF Mono', Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-  font-size: 0.9em;
-  line-height: 1.5;
-  text-shadow: none;
-}
-
-:deep(.line-numbers .line-numbers-rows) {
-  border-right: 1px solid #999;
-  padding-right: 0.8em;
-}
-
-/* 深色模式适配 */
-@media (prefers-color-scheme: dark) {
-  :deep(.markdown-body pre[class*="language-"]) {
-    background: #1e1e1e;
-  }
-}
-
-/* 代码块顶部样式 */
-:deep(.markdown-body pre[class*="language-"])::before {
-  content: '';
-  display: block;
-  height: 12px;
-  width: 12px;
-  background: #ff5f56;
-  border-radius: 50%;
-  box-shadow:
-    20px 0 0 #ffbd2e,
-    40px 0 0 #27c93f;
-  margin-bottom: 0.8em;
-}
-
-/* 优化行号显示 */
-:deep(.line-numbers-rows > span::before) {
-  color: #888;
-}
-
-/* 滚动条美化 */
-:deep(.markdown-body pre[class*="language-"])::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-:deep(.markdown-body pre[class*="language-"])::-webkit-scrollbar-thumb {
-  background: #666;
-  border-radius: 4px;
-}
-
-:deep(.markdown-body pre[class*="language-"])::-webkit-scrollbar-track {
-  background: #2d2d2d;
-  border-radius: 4px;
-}
-
-/* 代码块按钮样式 */
-.markdown-body :deep(.code-wrapper) {
-  position: relative;
-}
-
-.markdown-body :deep(.code-actions) {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  display: flex;
-  gap: 6px;
-  z-index: 20;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.markdown-body :deep(.code-wrapper:hover .code-actions) {
-  opacity: 1;
-}
-
-.markdown-body :deep(.code-btn) {
-  width: 24px;
-  height: 24px;
-  background: rgba(30, 30, 30, 0.7);
-  border: none;
-  border-radius: 4px;
-  color: #fff;
-  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
-}
-
-.markdown-body :deep(.code-btn:hover) {
-  background: rgba(50, 50, 50, 0.9);
-  transform: scale(1.1);
-}
-
-/* 全屏抽屉样式 */
-.fullscreen-drawer {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.9);
-  z-index: 9999;
-  transform: translateY(100%);
-  transition: transform 0.3s ease;
-  display: flex;
-  flex-direction: column;
-}
-
-.fullscreen-drawer.active {
-  transform: translateY(0);
-}
-
-.drawer-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px 20px;
-  background-color: #1e1e1e;
-  border-bottom: 1px solid #333;
-}
-
-.drawer-title {
-  color: #e0e0e0;
-  font-size: 14px;
-  text-transform: uppercase;
-}
-
-.drawer-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.drawer-btn {
-  background-color: transparent;
-  color: #e0e0e0;
-  border: 1px solid #444;
-  border-radius: 4px;
-  padding: 6px 12px;
-  cursor: pointer;
-  font-size: 13px;
-  transition: all 0.2s;
-}
-
-.drawer-btn:hover {
-  background-color: #333;
-}
-
-.close-btn {
-  color: #f56c6c;
-  border-color: #f56c6c;
-}
-
-.close-btn:hover {
-  background-color: rgba(245, 108, 108, 0.1);
-}
-
-.drawer-content {
-  flex: 1;
-  overflow: auto;
-  background-color: #1e1e1e;
-  padding: 20px;
-}
-
-.drawer-content pre {
-  margin: 0;
-  height: 100%;
-  overflow: auto;
-  background: transparent;
-}
-
-.drawer-content code {
-  font-family: 'SF Mono', Monaco, Menlo, Consolas, 'Courier New', monospace;
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-/* 提示消息样式 */
-:global(.code-toast) {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  padding: 10px 16px;
-  border-radius: 4px;
-  background-color: rgba(0, 0, 0, 0.7);
-  color: #fff;
-  z-index: 10000;
-  opacity: 0;
-  transform: translateY(-10px);
-  transition: all 0.3s;
-}
-
-:global(.code-toast.show) {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-:global(.code-toast.success) {
-  border-left: 3px solid #67c23a;
-}
-
-:global(.code-toast.error) {
-  border-left: 3px solid #f56c6c;
 }
 </style>

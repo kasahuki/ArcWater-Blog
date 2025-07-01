@@ -17,6 +17,7 @@ export default defineConfig({
   },
   // 内网穿透配置
   server: {
+    port: 3001,
     allowedHosts: [
       '51e46d8.r22.cpolar.top', // 添加你要允许的主机地址
       // 可以添加多个主机地址，用逗号分隔
