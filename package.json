@@ -16,6 +16,7 @@
     "highlight.js": "^11.11.1",
     "less": "^4.3.0",
     "marked": "^15.0.8",
+    "mermaid": "^11.7.0",
     "pinia": "^3.0.1",
     "pinia-plugin-persistedstate": "^4.2.0",
     "prismjs": "^1.30.0",

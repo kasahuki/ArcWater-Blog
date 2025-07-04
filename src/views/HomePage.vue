@@ -909,20 +909,7 @@ function get3DStyle(idx) {
   margin-bottom: 2rem;
 }
 
-.highlight {
-  background: linear-gradient(120deg, rgba(0, 122, 255, 0.1) 0%, rgba(88, 86, 214, 0.1) 100%);
-  color: #007aff;
-  font-weight: 600;
-  padding: 0.1rem 0.3rem;
-  border-radius: 4px;
-  position: relative;
-  transition: all 0.3s ease;
-}
 
-.highlight:hover {
-  background: linear-gradient(120deg, rgba(0, 122, 255, 0.2) 0%, rgba(88, 86, 214, 0.2) 100%);
-  transform: translateY(-1px);
-}
 
 @keyframes oceanWave {
   0% {

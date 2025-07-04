@@ -9,7 +9,10 @@
             <div class="article-meta">
               <span class="article-date">{{ article.updateTime ? dayjs(article.updateTime).format('YYYY-MM-DD HH:mm:ss')
                 : '未知时间' }}</span>
-              <span class="article-views">{{ article.clickTimes || 0 }}次阅读</span>
+              <span class="article-wordcount">
+                {{ articleWordCount }} 字 <span class="readtime">（约 {{ articleReadTime }} 分钟阅读）</span>
+              </span>
+              <span class="article-views right">{{ article.clickTimes || 0 }}次阅读</span>
             </div>
             <div class="article-tags">
               <el-tag size="small" effect="plain" type="primary">{{ categoryName || '未分类' }}</el-tag>
@@ -99,7 +102,7 @@
           <div class="sidebar-section author-card">
             <h3>Author</h3>
             <div class="author-profile">
-              <el-avatar :size="60" src="https://via.placeholder.com/60x60/4A90E2/FFFFFF?text=头像" />
+              <el-avatar :size="60" src="https://avatars.githubusercontent.com/u/146419145?v=4" />
               <h4>senjay</h4>
               <IconBar></IconBar>
               <el-button type="primary" plain size="big" @click="$router.push({ name: 'About' })">
@@ -207,6 +210,9 @@
         </div>
       </div>
     </transition>
+
+    <!-- 图片预览组件 -->
+    <el-image-viewer v-if="showImageViewer" :url-list="[previewImageUrl]" @close="showImageViewer = false" />
   </div>
 </template>
 
@@ -214,6 +220,7 @@
 import { ref, onMounted, nextTick, onUnmounted, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { Share, ArrowUp, Menu, ArrowDown } from '@element-plus/icons-vue'
+import { ElImageViewer } from 'element-plus'
 import IconBar from '../components/IconBar.vue'
 import { articleDetailService, relatedArticleService, hotArticleService } from '@/api/article'
 import { categoryGetService } from '@/api/category'
@@ -229,12 +236,28 @@ dayjs.locale('zh-cn') // 使用中文
 
 import MoreButton from '@/components/MoreButton.vue'
 import TocTreeNode from '../components/TocTreeNode.vue'
+// 添加 mermaid 支持
+import mermaid from 'mermaid'
 
 //#region 状态变量定义
 const route = useRoute()
 const articleId = ref(route.params.id || 1)
 const categoryName = ref('')
 const tocItems = ref([]) // 存储目录项
+
+// 新增：文章字数和预计阅读时间
+const articleWordCount = computed(() => {
+  // 去除 HTML 标签，统计纯文本字数
+  if (!article.value.content) return 0
+  const div = document.createElement('div')
+  div.innerHTML = article.value.content
+  return div.textContent.replace(/\s/g, '').length
+})
+const articleReadTime = computed(() => {
+  // 500字/分钟（更快的阅读速度）
+  const min = Math.max(1, Math.round(articleWordCount.value / 500))
+  return min
+})
 
 // 添加全屏代码相关状态
 const isFullscreenActive = ref(false)
@@ -262,6 +285,40 @@ const popularArticles = ref([])
 
 const showShareCapsule = ref(false)
 const shareBtnRef = ref(null)
+const showImageViewer = ref(false)
+const previewImageUrl = ref('')
+
+// 图片预览方法
+const openImagePreview = (url) => {
+  previewImageUrl.value = url
+  showImageViewer.value = true
+}
+
+// 移除按钮，改为双击图片放大
+const addImagePreviewDblClick = () => {
+  const imgs = document.querySelectorAll('.article-content img')
+  imgs.forEach(img => {
+    // 移除之前的事件，避免重复绑定
+    img.ondblclick = null
+    // 绑定双击事件
+    img.ondblclick = (e) => {
+      e.stopPropagation()
+      openImagePreview(img.src)
+    }
+    // 移除按钮容器（如果有）
+    if (img.parentElement && img.parentElement.classList.contains('image-preview-wrapper')) {
+      img.parentElement.replaceWith(img)
+    }
+  })
+}
+
+// 监听文章内容变化，添加双击事件
+watch(() => article.value.content, () => {
+  nextTick(() => {
+    addImagePreviewDblClick()
+  })
+})
+
 //#endregion
 
 //#region Markdown配置与处理
@@ -273,6 +330,10 @@ marked.setOptions({
   mangle: false,
   sanitize: false,
   highlight: function (code, lang) {
+    if (lang === 'mermaid') {
+      // Mermaid 不做 Prism 高亮
+      return code
+    }
     if (Prism.languages[lang]) {
       try {
         return Prism.highlight(code, Prism.languages[lang], lang)
@@ -298,14 +359,16 @@ const processArticleContent = (htmlContent) => {
   htmlContent = htmlContent.replace(/==([^=]+)==/g, '<span class="md-highlight">$1</span>');
 
   // 匹配所有代码块
-  return htmlContent.replace(/<pre><code class="language-([^"]+)">([\s\S]*?)<\/code><\/pre>/g, (match, language, code) => {
+  return htmlContent.replace(/<pre><code( class="language-([^"]+)")?>([\s\S]*?)<\/code><\/pre>/g, (match, classAttr, language, code) => {
     // 生成唯一ID
     const codeId = 'code-' + Math.random().toString(36).substring(2, 9);
-
-    // 确保code是一个字符串
     const codeContent = (code || '').toString();
-
-    // 创建一个带按钮的代码块
+    // 判断是否有语言
+    let codeClass = classAttr ? classAttr : '';
+    let extraClass = '';
+    if (!language) {
+      extraClass = ' codeblock-plain';
+    }
     return `
       <div class="code-wrapper">
         <div class="code-actions">
@@ -315,14 +378,14 @@ const processArticleContent = (htmlContent) => {
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
             </svg>
           </button>
-          <button class="code-btn fullscreen-btn" onclick="window._showFullscreen('${codeId}', '${language}')" title="全屏">
+          <button class="code-btn fullscreen-btn" onclick="window._showFullscreen('${codeId}', '${language || ''}')" title="全屏">
             <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
               <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"></path>
             </svg>
           </button>
         </div>
         <textarea id="${codeId}" style="display:none">${codeContent}</textarea>
-        <pre><code class="language-${language}">${code}</code></pre>
+        <pre><code${codeClass}${extraClass}>${code}</code></pre>
       </div>
     `;
   });
@@ -386,13 +449,30 @@ const extractHeaders = (content) => {
   return headers
 }
 
-// 处理目录点击
-const handleTocClick = (id) => {
-  const element = document.getElementById(id)
+// 顶部导航栏高度（按实际情况调整）
+const NAVBAR_HEIGHT = 64; // px
+
+const scrollToHeaderWithOffset = (id) => {
+  const element = document.getElementById(id);
   if (element) {
-    element.scrollIntoView({ behavior: 'smooth' })
+    const rect = element.getBoundingClientRect();
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const offset = NAVBAR_HEIGHT + 16; // 16px 额外间距
+    const top = rect.top + scrollTop - offset;
+    window.scrollTo({ top, behavior: 'smooth' });
   }
-}
+};
+
+const handleTocClick = (id) => {
+  scrollToHeaderWithOffset(id);
+};
+
+const handleDrawerTocClick = (id) => {
+  closeTocDrawer();
+  nextTick(() => {
+    scrollToHeaderWithOffset(id);
+  });
+};
 
 // 处理滚动高亮
 const handleScroll = () => {
@@ -448,10 +528,19 @@ const showFullscreen = (codeText, language) => {
   currentLanguage.value = language || 'plaintext'
   isFullscreenActive.value = true
 
-  // 在下一个 tick 中高亮代码
+  // 在下一个 tick 中高亮代码或渲染 mermaid
   nextTick(() => {
     if (fullscreenCodeBlock.value) {
-      Prism.highlightElement(fullscreenCodeBlock.value)
+      if (currentLanguage.value === 'mermaid') {
+        // 渲染 mermaid
+        try {
+          mermaid.init(undefined, fullscreenCodeBlock.value)
+        } catch (e) {
+          fullscreenCodeBlock.value.innerHTML = '<pre style="color:red">Mermaid 渲染失败: ' + e + '</pre>'
+        }
+      } else {
+        Prism.highlightElement(fullscreenCodeBlock.value)
+      }
     }
   })
 }
@@ -524,7 +613,7 @@ const getArticleDetail = async () => {
         const updatedLines = lines.map(line => {
           const headerMatch = line.match(new RegExp(`^(#{${item.level}})\\s+(.+)$`))
           if (headerMatch && headerMatch[2].trim() === item.title) {
-            return `${headerMatch[1]} <span id="${item.id}">${headerMatch[2]}</span>`
+            return `${headerMatch[1]} <span id="${item.id}" class="highlight">${headerMatch[2]}</span>`
           }
           return line
         })
@@ -541,6 +630,9 @@ const getArticleDetail = async () => {
       nextTick(() => {
         Prism.highlightAll()
         initCodeButtons()
+        setTimeout(() => {
+          renderMermaidBlocks();
+        }, 50); // 50ms 够用，必要时可调大
       })
     }
     article.value = res.data
@@ -724,15 +816,6 @@ const handleFloatBtnShow = () => {
   showFloatBtns.value = scrollY > docHeight / 2
 }
 
-// 目录抽屉点击目录项跳转
-const handleDrawerTocClick = (id) => {
-  closeTocDrawer()
-  nextTick(() => {
-    const el = document.getElementById(id)
-    if (el) el.scrollIntoView({ behavior: 'smooth' })
-  })
-}
-
 // 在 <script setup> 里添加
 const goToChatGPT = () => {
   const url = `https://chat.openai.com/?code=${encodeURIComponent(currentCode.value)}`
@@ -823,20 +906,35 @@ const collapseAllToc = () => {
   const collapse = (nodes) => nodes.forEach(n => { if (n.children && n.children.length) n.isCollapsed = true; if (n.children) collapse(n.children) })
   collapse(tocTree.value)
 }
+
+// 渲染 mermaid 代码块
+const renderMermaidBlocks = () => {
+  // 查找所有未渲染的 mermaid 代码块
+  const blocks = document.querySelectorAll('.markdown-body pre code.language-mermaid:not([data-mermaid-rendered])');
+  blocks.forEach((block, idx) => {
+    block.setAttribute('data-mermaid-rendered', 'true');
+    const code = block.textContent;
+    // 创建 mermaid 容器
+    const mermaidDiv = document.createElement('div');
+    mermaidDiv.className = 'mermaid';
+    mermaidDiv.textContent = code;
+    // 插入到 code block 前面
+    block.parentElement.parentElement.insertAdjacentElement('beforebegin', mermaidDiv);
+    // 隐藏原 code block
+    block.parentElement.parentElement.style.display = 'none';
+    // 渲染
+    try {
+      mermaid.init(undefined, mermaidDiv);
+    } catch (e) {
+      mermaidDiv.innerHTML = '<pre style="color:red">Mermaid 渲染失败: ' + e + '</pre>';
+    }
+  });
+};
 </script>
 <style scoped>
 @import "@/assets/css/ArticleDetail.css";
 
-.toc-list {
-  max-height: none !important;
-  overflow: visible !important;
-}
-
-.toc-tree-btn {
-  padding: 2px 8px;
-  font-size: 1.1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+:deep(.el-image-viewer__wrapper) {
+  z-index: 2100;
 }
 </style>

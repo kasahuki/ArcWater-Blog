@@ -21,6 +21,8 @@ import 'prismjs/components/prism-sql'
 import 'prismjs/plugins/line-numbers/prism-line-numbers.css'
 import 'prismjs/plugins/line-numbers/prism-line-numbers'
 import 'prismjs/components/prism-nginx'
+
+
 // 触发高亮函数暴露出去
 export const highlightAll = () => {
   Prism.highlightAll()

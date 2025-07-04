@@ -28,12 +28,7 @@
             </el-collapse>
           </el-scrollbar>
 
-          <div class="sidebar-footer">
-            <div class="user-profile">
-              <el-avatar :size="32" src="https://via.placeholder.com/40" />
-              <span class="username">用户名</span>
-            </div>
-          </div>
+
         </div>
 
         <!-- 切换按钮 - 放在中间位置 -->
@@ -740,21 +735,9 @@ const handleScroll = () => {
   color: #fff;
 }
 
-.sidebar-footer {
-  padding: 1rem;
-  border-top: 1px solid var(--border-color);
-}
 
-.user-profile {
-  display: flex;
-  align-items: center;
-  gap: 0.625rem;
-}
 
-.username {
-  font-size: 0.875rem;
-  font-weight: 500;
-}
+
 
 .sidebar-toggle {
   position: absolute;
