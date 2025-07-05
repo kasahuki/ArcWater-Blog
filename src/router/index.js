@@ -44,6 +44,23 @@ const router = createRouter({
   history: createWebHistory(),
   routes,
   scrollBehavior(to, from, savedPosition) {
+    // 开发环境下优先使用保存的滚动位置
+    if (import.meta.env.DEV) {
+      try {
+        const saved = sessionStorage.getItem('dev_scroll_position')
+        if (saved) {
+          const { y } = JSON.parse(saved)
+          // 如果是同一路由的刷新，恢复滚动位置
+          if (to.path === from.path) {
+            return { top: y, behavior: 'instant' }
+          }
+        }
+      } catch (e) {
+        console.warn('路由滚动位置恢复失败:', e)
+      }
+    }
+    
+    // 默认行为：优先使用浏览器保存的位置，否则回到顶部
     if (savedPosition) {
       return savedPosition
     } else {

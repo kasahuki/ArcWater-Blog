@@ -17,7 +17,7 @@
             <div class="article-tags">
               <el-tag size="small" effect="plain" type="primary">{{ categoryName || '未分类' }}</el-tag>
               <el-tag size="small" effect="plain" type="info" v-for="tag in (article.tags || [])" :key="tag">{{ tag
-              }}</el-tag>
+                }}</el-tag>
             </div>
           </div>
 
@@ -55,7 +55,7 @@
                               d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8zm.5-13H11v6l5.2 3.2.8-1.2-4.5-2.7V7z" />
                           </svg>
                           <span>{{ item.updateTime ? dayjs(item.updateTime).format('YYYY-MM-DD HH:mm') : '未知时间'
-                            }}</span>
+                          }}</span>
                         </div>
                         <div class="info-item views">
                           <svg class="icon" viewBox="0 0 24 24">
@@ -102,7 +102,7 @@
           <div class="sidebar-section author-card">
             <h3>Author</h3>
             <div class="author-profile">
-              <el-avatar :size="60" src="https://avatars.githubusercontent.com/u/146419145?v=4" />
+              <el-avatar :size="60" src="https://i.pinimg.com/736x/1e/d3/00/1ed300b0d286c37a57c2b3e73a941d93.jpg" />
               <h4>senjay</h4>
               <IconBar></IconBar>
               <el-button type="primary" plain size="big" @click="$router.push({ name: 'About' })">
@@ -213,6 +213,34 @@
 
     <!-- 图片预览组件 -->
     <el-image-viewer v-if="showImageViewer" :url-list="[previewImageUrl]" @close="showImageViewer = false" />
+
+    <!-- mermaid 图表预览组件 -->
+    <el-image-viewer v-if="showMermaidViewer" :url-list="[mermaidPreviewUrl]" @close="closeMermaidViewer"
+      :preview-teleported="true" :initial-index="0" :hide-on-click-modal="true" :z-index="2000" />
+
+    <!-- mermaid 源码弹窗 -->
+    <el-dialog v-model="showMermaidSourceDialog" width="60%" :close-on-click-modal="false" :close-on-press-escape="true"
+      :show-close="false" class="mermaid-source-dialog">
+      <template #header>
+        <div class="mermaid-dialog-header">
+          <div class="apple-dots">
+            <span class="dot dot-red" @click="closeMermaidSourceDialog" title="关闭"></span>
+
+            <span class="dot dot-green" @click="scrollMermaidToTop" title="滚动到顶部"></span>
+            <span class="dot dot-blue" @click="scrollMermaidToBottom" title="滚动到底部"></span>
+          </div>
+          <span class="dialog-title">Mermaid 源码</span>
+        </div>
+      </template>
+      <div class="mermaid-source-content">
+        <pre class="mermaid-source-code" ref="mermaidSourceCodeElement">{{ mermaidSourceCode }}</pre>
+      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <MoreButton @click="copyMermaidSource">复制源码</MoreButton>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -288,10 +316,132 @@ const shareBtnRef = ref(null)
 const showImageViewer = ref(false)
 const previewImageUrl = ref('')
 
+// mermaid 全屏预览相关状态
+const showMermaidViewer = ref(false)
+const mermaidPreviewUrl = ref('')
+
+// mermaid 源码弹窗相关状态
+const showMermaidSourceDialog = ref(false)
+const mermaidSourceCode = ref('')
+
 // 图片预览方法
 const openImagePreview = (url) => {
   previewImageUrl.value = url
   showImageViewer.value = true
+}
+
+// mermaid 全屏预览方法
+const openMermaidPreview = (mermaidCode) => {
+  // 清理之前的 URL
+  if (mermaidPreviewUrl.value) {
+    URL.revokeObjectURL(mermaidPreviewUrl.value)
+  }
+
+  // 创建一个临时的 mermaid 容器来渲染图表
+  const tempContainer = document.createElement('div')
+  tempContainer.className = 'mermaid'
+  tempContainer.textContent = mermaidCode
+  tempContainer.style.position = 'absolute'
+  tempContainer.style.left = '-9999px'
+  tempContainer.style.top = '-9999px'
+  tempContainer.style.background = '#ffffff'
+  document.body.appendChild(tempContainer)
+
+  try {
+    // 渲染 mermaid
+    mermaid.init(undefined, tempContainer)
+
+    // 等待渲染完成后获取 SVG
+    setTimeout(() => {
+      const svg = tempContainer.querySelector('svg')
+      if (svg) {
+        // 为 SVG 添加白色背景
+        svg.style.backgroundColor = '#ffffff'
+        svg.setAttribute('style', svg.getAttribute('style') + '; background-color: #ffffff;')
+
+        // 确保 SVG 有白色背景
+        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
+        rect.setAttribute('width', '100%')
+        rect.setAttribute('height', '100%')
+        rect.setAttribute('fill', '#ffffff')
+        rect.setAttribute('x', '0')
+        rect.setAttribute('y', '0')
+        svg.insertBefore(rect, svg.firstChild)
+
+        // 将 SVG 转换为 data URL
+        const svgString = new XMLSerializer().serializeToString(svg)
+        const svgBlob = new Blob([svgString], { type: 'image/svg+xml' })
+        const url = URL.createObjectURL(svgBlob)
+
+        mermaidPreviewUrl.value = url
+        showMermaidViewer.value = true
+
+        // 清理临时元素
+        document.body.removeChild(tempContainer)
+      } else {
+        console.error('Mermaid 渲染失败')
+        document.body.removeChild(tempContainer)
+      }
+    }, 100)
+  } catch (e) {
+    console.error('Mermaid 渲染失败:', e)
+    document.body.removeChild(tempContainer)
+  }
+}
+
+// 关闭 mermaid 预览
+const closeMermaidViewer = () => {
+  showMermaidViewer.value = false
+  // 清理 URL
+  if (mermaidPreviewUrl.value) {
+    URL.revokeObjectURL(mermaidPreviewUrl.value)
+    mermaidPreviewUrl.value = ''
+  }
+}
+
+// 显示 mermaid 源码
+const showMermaidSource = (mermaidCode) => {
+  mermaidSourceCode.value = mermaidCode
+  showMermaidSourceDialog.value = true
+}
+
+// 关闭 mermaid 源码弹窗
+const closeMermaidSourceDialog = () => {
+  showMermaidSourceDialog.value = false
+  mermaidSourceCode.value = ''
+}
+
+// 复制 mermaid 源码
+const copyMermaidSource = () => {
+  try {
+    navigator.clipboard.writeText(mermaidSourceCode.value).then(() => {
+      showToast('源码已复制到剪贴板')
+    }).catch(err => {
+      console.error('复制失败:', err)
+      showToast('复制失败', 'error')
+    })
+  } catch (error) {
+    console.error('复制失败:', error)
+    showToast('复制失败', 'error')
+  }
+}
+
+// mermaid 源码弹窗相关方法
+const mermaidSourceCodeElement = ref(null)
+
+
+// 滚动到顶部
+const scrollMermaidToTop = () => {
+  if (mermaidSourceCodeElement.value) {
+    mermaidSourceCodeElement.value.scrollTop = 0
+  }
+}
+
+// 滚动到底部
+const scrollMermaidToBottom = () => {
+  if (mermaidSourceCodeElement.value) {
+    mermaidSourceCodeElement.value.scrollTop = mermaidSourceCodeElement.value.scrollHeight
+  }
 }
 
 // 移除按钮，改为双击图片放大
@@ -331,7 +481,7 @@ marked.setOptions({
   sanitize: false,
   highlight: function (code, lang) {
     if (lang === 'mermaid') {
-      // Mermaid 不做 Prism 高亮
+      // Mermaid 代码块直接返回原始代码，不做高亮
       return code
     }
     if (Prism.languages[lang]) {
@@ -369,13 +519,39 @@ const processArticleContent = (htmlContent) => {
     if (!language) {
       extraClass = ' codeblock-plain';
     }
+
+    // 如果是 mermaid 代码块，直接渲染成图表
+    if (language === 'mermaid') {
+      const mermaidId = 'mermaid-' + Math.random().toString(36).substring(2, 9);
+      return `
+        <div class="mermaid-wrapper">
+          <div class="mermaid-actions">
+            <button class="mermaid-btn fullscreen-btn" onclick="window._showMermaidFullscreen('${mermaidId}')" title="全屏">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 32 32">
+                <path fill="#fb8c00" d="m25.329 20l-7.001-8H20V4h-8v8h1.672l-7.001 8H4v8h8v-8H9.328L16 12.376L22.672 20H20v8h8v-8z"/>
+              </svg>
+            </button>
+            <button class="mermaid-btn source-btn" onclick="window._showMermaidSource('${mermaidId}')" title="查看源码">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 32 32">
+                <path fill="#00a23c" d="m20.42 21.157l2.211 2.211L30 16l-7.369-7.369l-2.211 2.212L25.58 16Zm-8.84-10.314L9.369 8.631L2 16l7.369 7.369l2.211-2.211L6.42 16Zm5.831-3.166l1.6.437l-4.42 16.209l-1.6-.437z"/>
+              </svg>
+            </button>
+          </div>
+          <textarea id="${mermaidId}" style="display:none">${codeContent}</textarea>
+          <div class="mermaid" data-mermaid-code="${encodeURIComponent(codeContent)}">
+            ${codeContent}
+          </div>
+        </div>
+      `;
+    }
+
     return `
       <div class="code-wrapper">
         <div class="code-actions">
           <button class="code-btn copy-btn" onclick="window._copyCode('${codeId}')" title="复制">
             <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2v1"></path>
             </svg>
           </button>
           <button class="code-btn fullscreen-btn" onclick="window._showFullscreen('${codeId}', '${language || ''}')" title="全屏">
@@ -594,6 +770,24 @@ const initCodeButtons = () => {
       showFullscreen(codeEl.value || codeEl.textContent, language);
     }
   };
+
+  // 设置全局 mermaid 全屏函数
+  window._showMermaidFullscreen = (mermaidId) => {
+    const mermaidEl = document.getElementById(mermaidId);
+    if (mermaidEl) {
+      const mermaidCode = mermaidEl.value || mermaidEl.textContent;
+      openMermaidPreview(mermaidCode);
+    }
+  };
+
+  // 设置全局 mermaid 源码查看函数
+  window._showMermaidSource = (mermaidId) => {
+    const mermaidEl = document.getElementById(mermaidId);
+    if (mermaidEl) {
+      const mermaidCode = mermaidEl.value || mermaidEl.textContent;
+      showMermaidSource(mermaidCode);
+    }
+  };
 }
 //#endregion
 
@@ -760,8 +954,14 @@ onUnmounted(() => {
   window.removeEventListener('scroll', handleFloatBtnShow);
   window._copyCode = null;
   window._showFullscreen = null;
+  window._showMermaidFullscreen = null;
+  window._showMermaidSource = null;
   if (isFullscreenActive.value) {
     document.body.style.overflow = ''; // 恢复滚动
+  }
+  // 清理 mermaid 预览 URL
+  if (mermaidPreviewUrl.value) {
+    URL.revokeObjectURL(mermaidPreviewUrl.value);
   }
   document.removeEventListener('click', handleCapsuleOutsideClick)
 });
@@ -909,24 +1109,17 @@ const collapseAllToc = () => {
 
 // 渲染 mermaid 代码块
 const renderMermaidBlocks = () => {
-  // 查找所有未渲染的 mermaid 代码块
-  const blocks = document.querySelectorAll('.markdown-body pre code.language-mermaid:not([data-mermaid-rendered])');
-  blocks.forEach((block, idx) => {
-    block.setAttribute('data-mermaid-rendered', 'true');
-    const code = block.textContent;
-    // 创建 mermaid 容器
-    const mermaidDiv = document.createElement('div');
-    mermaidDiv.className = 'mermaid';
-    mermaidDiv.textContent = code;
-    // 插入到 code block 前面
-    block.parentElement.parentElement.insertAdjacentElement('beforebegin', mermaidDiv);
-    // 隐藏原 code block
-    block.parentElement.parentElement.style.display = 'none';
+  // 查找所有未渲染的 mermaid 容器
+  const mermaidContainers = document.querySelectorAll('.mermaid-wrapper .mermaid:not([data-mermaid-rendered])');
+  mermaidContainers.forEach((container, idx) => {
+    container.setAttribute('data-mermaid-rendered', 'true');
+    const code = container.textContent;
+
     // 渲染
     try {
-      mermaid.init(undefined, mermaidDiv);
+      mermaid.init(undefined, container);
     } catch (e) {
-      mermaidDiv.innerHTML = '<pre style="color:red">Mermaid 渲染失败: ' + e + '</pre>';
+      container.innerHTML = '<pre style="color:red">Mermaid 渲染失败: ' + e + '</pre>';
     }
   });
 };
