@@ -21,7 +21,6 @@
                     :class="{ 'active': isMonthActive(year.value, month.value) }"
                     @click="selectMonth(year.value, month.value)">
                     <span>{{ month.label }}</span>
-                    <span class="article-count"> {{}}</span>
                   </div>
                 </div>
               </el-collapse-item>
@@ -45,23 +44,16 @@
       <!-- 内容区域 -->
       <div class="content-area">
         <div class="content-header glass-panel">
-          <h1>{{ category.categoryName }}</h1>
+          <h1>{{ category.categoryName }} <div class="description-container glass-panel">
+              <h2 class="description-title">描述：{{ category.description }}</h2>
+            </div>
+          </h1>
           <div class="header-actions">
             <div class="search-group">
               <el-input v-model="searchQuery" placeholder="搜索文章..." prefix-icon="Search" clearable class="search-input"
                 @keyup.enter="handleSearch" />
-              <el-button type="primary" @click="handleSearch">
-                <el-icon>
-                  <Search />
-                </el-icon>
-                搜索
-              </el-button>
-              <el-button @click="handleReset">
-                <el-icon>
-                  <RefreshRight />
-                </el-icon>
-                重置
-              </el-button>
+              <WhiteButton @click="handleSearch" style="margin-left: 1rem;" :content="'搜索'" type="primary" />
+              <WhiteButton @click="handleReset" style="margin-left: 1rem;" :content="'重置'" type="warning" />
             </div>
             <el-radio-group v-model="filterCondition" class="filter-group">
               <el-radio-button :label="1">最新发布</el-radio-button>
@@ -69,9 +61,7 @@
             </el-radio-group>
           </div>
         </div>
-        <div class="description-container glass-panel">
-          <h2 class="description-title">描述：{{ category.description }}</h2>
-        </div>
+
 
         <div class="articles-container" ref="articlesContainer" @scroll="handleScroll">
           <div v-infinite-scroll="loadMoreArticles" infinite-scroll-distance="100" infinite-scroll-immediate="false"
@@ -167,6 +157,7 @@ import {
 import { useRoute, useRouter } from 'vue-router'
 import { categoryGetService } from '@/api/category'
 import { articleListService } from '@/api/article'
+import WhiteButton from '@/components/WhiteButton.vue'
 //#endregion
 
 
@@ -603,7 +594,6 @@ const handleScroll = () => {
   font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   min-height: 100vh;
   width: 100%;
-  background: #fff;
   color: #222;
   --primary-color: #3b82f6;
   --primary-light: #93c5fd;
@@ -614,8 +604,8 @@ const handleScroll = () => {
   --text-color-secondary: #666;
   --border-color: #e5e7eb;
   --accent-color: #3b82f6;
-  --sidebar-width: 150px;
-  --sidebar-collapsed-width: 50px;
+  --sidebar-width: 120px;
+  --sidebar-collapsed-width: 0px;
   --header-height: 60px;
   letter-spacing: 0.015em;
   overflow: hidden;
@@ -659,14 +649,13 @@ const handleScroll = () => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  padding: 1rem;
+  padding: 0.5rem;
 }
 
 .sidebar-header {
   display: flex;
   align-items: center;
-  padding: 1rem;
+  padding: 0.1rem;
 }
 
 .app-logo {
@@ -741,7 +730,7 @@ const handleScroll = () => {
 
 .sidebar-toggle {
   position: absolute;
-  right: -20px;
+  right: -35px;
   top: 50%;
   transform: translateY(-50%);
   display: flex;
@@ -749,7 +738,9 @@ const handleScroll = () => {
   justify-content: center;
   width: 40px;
   height: 40px;
-  background-color: var(--accent-color);
+  scale: 0.8;
+  background-color: #be2626;
+  color: #eff31f;
   border-radius: 50%;
   cursor: pointer;
   z-index: 10;
@@ -778,9 +769,10 @@ const handleScroll = () => {
 }
 
 .content-header {
-  padding: 1.5rem;
-  background: #f3f6fa;
-  border-bottom: 1px solid #e5e7eb;
+  border-radius: 0rem;
+  padding: 0.8rem;
+  background: linear-gradient(135deg, #f8f9ff 0%, #e8f4fd 50%, #f0f8ff 100%);
+  color: #0e1d75;
 }
 
 .content-header h1 {
@@ -798,15 +790,6 @@ const handleScroll = () => {
 }
 
 .search-group {
-  background: rgba(255, 255, 255, 0.35);
-  /* Remove blur effect */
-  /* backdrop-filter: blur(18px) saturate(1.5); */
-  /* -webkit-backdrop-filter: blur(18px) saturate(1.5); */
-  border-radius: 0.8rem;
-  border: 1px solid #f0f1f3;
-  box-shadow: 0 1px 6px rgba(60, 100, 180, 0.04);
-  padding: 0.3rem 0.7rem;
-  gap: 0.5rem;
   display: flex;
   align-items: center;
   transition: box-shadow 0.25s, transform 0.25s, background 0.3s, border-color 0.3s;
@@ -856,23 +839,67 @@ const handleScroll = () => {
   border-radius: 0.75rem;
   margin-left: auto;
   box-shadow: none;
+  display: flex;
+  gap: 0.5rem;
 }
 
 :deep(.el-radio-button__inner) {
-  background: transparent !important;
+  background: #fcfcfd !important;
   border: none !important;
-  color: var(--text-color-secondary) !important;
+  color: #36395a !important;
   transition: all 0.3s ease;
   padding: 0.4rem 0.9rem;
   font-weight: 500;
-  box-shadow: none !important;
+  border-radius: 4px !important;
+  box-shadow:
+    rgba(45, 35, 66, 0.2) 0 2px 4px,
+    rgba(45, 35, 66, 0.15) 0 7px 13px -3px,
+    #d6d6e7 0 -3px 0 inset !important;
+  height: 28px !important;
+  line-height: 1 !important;
+  font-size: 10px !important;
+  cursor: pointer !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  touch-action: manipulation !important;
+  white-space: nowrap !important;
+  will-change: box-shadow, transform !important;
+}
+
+:deep(.el-radio-button__inner:hover) {
+  box-shadow:
+    rgba(45, 35, 66, 0.3) 0 4px 8px,
+    rgba(45, 35, 66, 0.2) 0 7px 13px -3px,
+    #d6d6e7 0 -3px 0 inset !important;
+  transform: translateY(-2px) !important;
 }
 
 :deep(.el-radio-button__original-radio:checked + .el-radio-button__inner) {
-  background: #eaf6fb !important;
-  color: #2563eb !important;
+  background: #3b82f6 !important;
+  color: #ffffff !important;
   border: none !important;
-  box-shadow: none !important;
+  box-shadow:
+    rgba(59, 130, 246, 0.2) 0 2px 4px,
+    rgba(59, 130, 246, 0.15) 0 7px 13px -3px,
+    #1d4ed8 0 -3px 0 inset !important;
+}
+
+:deep(.el-radio-button__original-radio:checked + .el-radio-button__inner:hover) {
+  box-shadow:
+    rgba(59, 130, 246, 0.3) 0 4px 8px,
+    rgba(59, 130, 246, 0.2) 0 7px 13px -3px,
+    #1d4ed8 0 -3px 0 inset !important;
+  transform: translateY(-2px) !important;
+}
+
+:deep(.el-radio-button__original-radio:checked + .el-radio-button__inner:active) {
+  box-shadow: #1d4ed8 0 3px 7px inset !important;
+  transform: translateY(2px) !important;
+}
+
+:deep(.el-radio-button__inner:active) {
+  box-shadow: #d6d6e7 0 3px 7px inset !important;
+  transform: translateY(2px) !important;
 }
 
 .search-group .el-button,
@@ -941,14 +968,14 @@ const handleScroll = () => {
 .articles-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 1.2rem;
-  padding-bottom: 1.2rem;
+  gap: 1rem;
+  padding-bottom: 1rem;
   min-height: 100%;
 }
 
 .article-card {
-  padding: 1.5rem;
-  border-radius: 1rem;
+  padding: 1rem;
+  border-radius: 0.75rem;
   background: #fff;
   border: 1px solid #f1f5f9;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
@@ -956,6 +983,7 @@ const handleScroll = () => {
   cursor: pointer;
   position: relative;
   overflow: hidden;
+  margin-left: 1rem;
 }
 
 .article-card::before {
@@ -981,7 +1009,7 @@ const handleScroll = () => {
 }
 
 .article-header {
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .article-title-section {
@@ -991,10 +1019,10 @@ const handleScroll = () => {
 }
 
 .article-title {
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   font-weight: 700;
-  color: #1e293b;
-  line-height: 1.4;
+  color: #0e5edf;
+  line-height: 1.3;
   margin: 0;
   letter-spacing: -0.025em;
   transition: color 0.2s ease;
@@ -1038,25 +1066,25 @@ const handleScroll = () => {
 .article-body {
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: 1.5rem;
-  align-items: start;
+  gap: 1rem;
+  align-items: center;
 }
 
 .article-content {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.1rem;
 }
 
 .article-excerpt {
-  font-size: 0.95rem;
-  line-height: 1.6;
+  font-size: 0.875rem;
+  line-height: 1.5;
   color: #475569;
   margin: 0;
   font-weight: 400;
   letter-spacing: 0.01em;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -1087,9 +1115,9 @@ const handleScroll = () => {
 }
 
 .article-image {
-  width: 140px;
-  height: 100px;
-  border-radius: 0.75rem;
+  width: 120px;
+  height: 80px;
+  border-radius: 0.5rem;
   overflow: hidden;
   flex-shrink: 0;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -1209,11 +1237,13 @@ const handleScroll = () => {
 .description-container {
   max-width: 320px;
   min-width: 120px;
-  padding: 0.5rem 0.8rem;
-  margin: 0.3rem 0 0.3rem 1.2rem;
+  margin-top: 0.5rem;
+  background: none;
+  border: none;
 }
 
 .description-title {
   font-size: 0.85rem;
+  color: #7e7e80;
 }
 </style>

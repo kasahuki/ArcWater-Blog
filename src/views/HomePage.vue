@@ -6,7 +6,39 @@
       <p>LET'S MAKE IT HAPPEN!</p>
     </div> -->
 
-    <HomeCover></HomeCover>
+    <div class="home-cover">
+      <HomeCover></HomeCover>
+      <ImgDescLayout style="border-top: 1px solid #e0e0e0; padding:5rem;" :images="images" :title="'How It Works?'"
+        :intro="intro" :list="list"></ImgDescLayout>
+      <div class="server-anime">
+        <ServerAnime style="margin-left: 1rem;"></ServerAnime>
+        <div class="server-anime-content">
+          <h2 class="choose-title ">Why choose ArcWater?</h2>
+          <p class="choose-desc">
+            Inspired by ArcWater, a creative space where you can explore different content fields.
+          </p>
+          <ul class="choose-list">
+            <li><span class="choose-strong">Technology Posts</span> : Explore the latest <span
+                class="highlight">technology</span> trends and insights.
+            </li>
+            <li><span class="choose-strong">Music</span> : Discover the latest <span class="highlight">music</span>
+              trends and insights.
+            </li>
+            <li><span class="choose-strong">Experience & Journey</span> : Share your <span class="highlight">experiences
+                and journey</span>
+              with us.
+            </li>
+            <li><span class="choose-strong">Resource & Tools </span> : Find and Use the helpful <span
+                class="highlight">resources and tools</span>.
+            </li>
+            <li style="margin-left: 18rem;margin-top: 1rem;">
+              <WaterButton :scale="0.8"></WaterButton>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
     <!-- 推荐文章轮播 -->
     <div class="section-container">
       <SectionTitle title="Comment" />
@@ -29,7 +61,7 @@
                 <div class="card-content">
                   <div class="article-meta">
                     <el-tag size="small" effect="plain" type="primary">{{ categoryIdMapName[article.categoryId]
-                    }}</el-tag>
+                      }}</el-tag>
                   </div>
                   <h4 class="article-title">{{ article.title }}</h4>
                   <p class="article-desc">{{ truncateContent(article.content) }}</p>
@@ -127,26 +159,28 @@
       </div>
       <div class="category-display" :class="viewMode">
         <!-- 网格模式 -->
-        <div class="category-grid" v-if="viewMode === 'grid'">
-          <div v-for="category in categories" :key="category.id" class="grid-item">
-            <router-link :to="`/category/${category.id}`" class="grid-link">
-              <div class="grid-card">
-                <!-- 右上角三角形文章数量 -->
-                <div class="triangle-corner">
-                  <span class="article-number">{{ category.articleCount }}篇</span>
-                </div>
-                <div class="grid-content">
-                  <div class="folder-icon">
-                    <svg viewBox="0 0 24 24" fill="currentColor">
-                      <path
-                        d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z" />
-                    </svg>
+        <div class="category-grid-container" v-if="viewMode === 'grid'">
+          <div class="category-grid" ref="gridContainer">
+            <div v-for="category in categories" :key="category.id" class="grid-item">
+              <router-link :to="`/category/${category.id}`" class="grid-link">
+                <div class="grid-card">
+                  <!-- 右上角三角形文章数量 -->
+                  <div class="triangle-corner">
+                    <span class="article-number">{{ category.articleCount }}篇</span>
                   </div>
-                  <h3>{{ category.categoryName }}</h3>
-                  <p class="grid-desc">{{ category.description }}</p>
+                  <div class="grid-content">
+                    <div class="folder-icon">
+                      <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path
+                          d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z" />
+                      </svg>
+                    </div>
+                    <h3>{{ category.categoryName }}</h3>
+                    <p class="grid-desc">{{ category.description }}</p>
+                  </div>
                 </div>
-              </div>
-            </router-link>
+              </router-link>
+            </div>
           </div>
         </div>
 
@@ -200,8 +234,7 @@
 
     </div>
   </div>
-  <div>
-  </div>
+
 
 
   <!-- 时间轴和图片窗口部分 -->
@@ -238,6 +271,21 @@
 
   <!-- 电脑背景和Logo覆盖 -->
   <div class="computer-logo-section">
+    <!-- 悬浮图标组 -->
+    <div class="floating-icons-container">
+      <div class="floating-code-icon">
+        <img src="/src/assets/image/code.svg" alt="" class="code-balloon">
+      </div>
+      <div class="floating-todo-icon">
+        <img src="/src/assets/image/todo.svg" alt="" class="todo-balloon">
+      </div>
+      <div class="floating-myfile-icon">
+        <img src="/src/assets/image/myfile.svg" alt="" class="myfile-balloon">
+      </div>
+      <div class="floating-bookhand-icon">
+        <img src="/src/assets/image/bookhand.svg" alt="" class="bookhand-balloon">
+      </div>
+    </div>
     <div class="computer-background">
       <img src="/src/assets/image/computer.png" alt="Computer Background" class="computer-image" />
       <!-- 电脑屏幕内容整体包装 -->
@@ -286,15 +334,17 @@
     </div>
   </div>
 
+
   <div class="home-container">
     <div class="flexbox" style="margin-bottom: 10rem; border-top: 1px solid #e0e0e0; padding-top: 1rem;">
       <ImageCard :url="url" />
       <div class="profile" style="display: flex;flex-direction: column;">
-        <div class="profile-item" style="margin-left: 1rem;">
+        <div class="profile-item" style="margin-left: 1rem;margin-top: 5rem;">
           <div class="WaterTitle">ArcWater</div>
           <div class="profile-item-content">
             Welcome to <span class="highlight">ArcWater</span>, a creative space where <span
-              class="highlight">technology</span> meets <span class="highlight">art</span>. Here you'll find insightful
+              class="highlight">technology</span> meets <span class="highlight">art</span>. Here you'll find
+            insightful
             articles,
             <span class="highlight">music</span> recommendations, and a collection of digital <span
               class="highlight">artifacts</span>. Join me on this journey of <span class="highlight">exploration</span>
@@ -307,8 +357,9 @@
         </div>
       </div>
     </div>
-
   </div>
+
+
 
 
 
@@ -318,7 +369,7 @@
 import ImageCard from '@/components/ImageCard.vue'
 import FloatCards from '../components/FloatCards.vue'
 import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
-import WhiteButton from '../components/WhiteButton.vue'
+import WaterButton from '@/components/WaterButton.vue'
 import HomeCover from '@/components/HomeCover.vue'
 import { hotArticleService } from '@/api/article'
 import SectionTitle from '@/components/SectionTitle.vue'
@@ -326,6 +377,22 @@ import dayjs from 'dayjs'
 import { useCategoryStore } from '@/stores/categoryStore'
 import img from '@/assets/image/arcwater_logo.png'
 import MoreButton from '@/components/MoreButton.vue'
+import ServerAnime from '@/components/ServerAnime.vue'
+import ImgDescLayout from '@/components/ImgDescLayout.vue'
+// ImgDescLayout模拟数据
+const images = ref([
+  '/src/assets/image/tech.jpg',
+  '/src/assets/image/note.jpg',
+  '/src/assets/image/music.jpg',
+
+])
+const intro = ref('ArcWater makes content exploration simple and fun. Three steps to easily experience the fusion of technology, music, and growth.')
+const list = ref([
+  '<b>Choose Domain</b> : Browse content categories that interest you',
+  '<b>Discover Excellence</b> : Read curated articles and resources',
+  '<b>Engage & Interact</b> : Join discussions and share your insights',
+  '<b>Join Community</b> : Connect with like-minded people and grow together'
+])
 const url = ref(img)
 const categoryStore = useCategoryStore()
 // 时间轴相关数据
@@ -554,7 +621,7 @@ const goToSlide = (idx) => {
 // 三点菜单相关状态
 const showFilterPanel = ref(false)
 const showViewMode = ref(false)
-const viewMode = ref('list') // 默认列表视图
+const viewMode = ref(localStorage.getItem('arcwater_view_mode') || 'list') // 默认列表视图，优先取本地存储
 const activeTooltip = ref(null)
 
 // 三点菜单功能函数
@@ -568,6 +635,7 @@ const closeFilterPanel = () => {
 
 const toggleViewMode = () => {
   viewMode.value = viewMode.value === 'grid' ? 'list' : 'grid'
+  localStorage.setItem('arcwater_view_mode', viewMode.value)
   showViewMode.value = true
   setTimeout(() => {
     showViewMode.value = false
@@ -628,6 +696,88 @@ function get3DStyle(idx) {
 </script>
 
 <style scoped>
+.home-cover {
+  display: flex;
+  flex-direction: column;
+  gap: 7rem;
+
+}
+
+.server-anime {
+  position: relative;
+  z-index: 1;
+  /* 内容宽度和原来一样，不加width:100vw */
+  height: 40rem;
+  display: flex;
+  padding: 0;
+  gap: 18rem;
+  /* 其余样式 */
+}
+
+.server-anime::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  left: 50%;
+  top: 0;
+  width: 100vw;
+  height: 100%;
+  background: #021132;
+  transform: translateX(-50%);
+  pointer-events: none;
+  /* 不影响内容交互 */
+
+}
+
+.server-anime-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  /* 让高度和 ServerAnime 一样高 */
+  height: 100%;
+  padding: 32px 40px;
+  box-sizing: border-box;
+}
+
+
+
+.choose-title {
+  font-size: 2.2rem;
+  font-weight: 700;
+  margin-bottom: 1.2rem;
+  color: #FF9900;
+  letter-spacing: 0.01em;
+}
+
+.choose-desc {
+  font-size: 1.05rem;
+  color: #e0e0e0;
+  margin-bottom: 1.5rem;
+  line-height: 1.7;
+}
+
+.choose-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.choose-list li {
+  font-size: 1.08rem;
+  color: #fff;
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+.choose-strong {
+  font-weight: 700;
+  color: #fff;
+  /* 可加渐变或主色 */
+}
+
 .GlodenTitle,
 .WaterTitle {
   font-family: -apple-system, SF Pro Display, sans-serif;
@@ -657,11 +807,18 @@ function get3DStyle(idx) {
   justify-content: space-between;
 }
 
+.profile-container {
+  width: 80%;
+  margin: 0 auto;
+
+}
+
 .home-container {
-  max-width: 1200px;
+  width: 1300px;
   margin: 0 auto;
   padding: 0 20px;
 }
+
 
 .welcome-banner {
   padding: 40px;
@@ -1231,6 +1388,8 @@ function get3DStyle(idx) {
   user-select: none;
 }
 
+
+
 .music-icon {
   width: 24px;
   height: 24px;
@@ -1502,6 +1661,7 @@ function get3DStyle(idx) {
 
 /* 时间轴部分样式 */
 .timeline-section {
+  margin: 0 -20px;
   padding: 6rem 0;
   position: relative;
   background: linear-gradient(135deg, #f8f9ff 0%, #e8f4fd 50%, #f0f8ff 100%);
@@ -2416,11 +2576,33 @@ function get3DStyle(idx) {
   width: 100%;
 }
 
+.category-grid-container {
+  width: 100%;
+  position: relative;
+}
+
 .category-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 20px;
   padding: 20px 10px;
+  max-height: 440px;
+  /* 限制为两排高度 */
+  overflow-x: auto;
+
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.category-grid::-webkit-scrollbar {
+  width: 2px;
+}
+
+.category-grid::-webkit-scrollbar-thumb {
+  background: #0865e7;
+  border-radius: 4px;
 }
 
 .grid-item {
@@ -2439,7 +2621,7 @@ function get3DStyle(idx) {
 
 .grid-card {
   height: 100%;
-  min-height: 200px;
+
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -2613,7 +2795,7 @@ function get3DStyle(idx) {
 .article-number {
   position: absolute;
   top: 10px;
-  right: -41px;
+  right: -55px;
   color: white;
   font-size: 14px;
   font-weight: 700;
@@ -2622,6 +2804,7 @@ function get3DStyle(idx) {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
   z-index: 11;
   pointer-events: none;
+  overflow: hidden;
 }
 
 /* hover效果 */
@@ -2634,8 +2817,157 @@ function get3DStyle(idx) {
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
-/* 响应式适配 */
+/* 悬浮代码图标 */
+.floating-code-icon {
+  position: absolute;
+  top: 25%;
+  left: 8%;
+  z-index: 100;
+  animation: float 6s ease-in-out infinite;
+}
+
+.code-balloon {
+  width: 100px;
+  height: 100px;
+  filter: drop-shadow(0 4px 8px rgba(0, 122, 255, 0.3));
+  transition: all 0.3s ease;
+}
+
+.code-balloon:hover {
+  transform: scale(1.1);
+  filter: drop-shadow(0 6px 12px rgba(0, 122, 255, 0.4));
+}
+
+/* 悬浮待办事项图标 */
+.floating-todo-icon {
+  position: absolute;
+  top: 20%;
+  right: 12%;
+  z-index: 100;
+  animation: float 7s ease-in-out infinite;
+  animation-delay: 1s;
+}
+
+.todo-balloon {
+  width: 90px;
+  height: 90px;
+  filter: drop-shadow(0 4px 8px rgba(255, 149, 0, 0.3));
+  transition: all 0.3s ease;
+}
+
+.todo-balloon:hover {
+  transform: scale(1.1);
+  filter: drop-shadow(0 6px 12px rgba(255, 149, 0, 0.4));
+}
+
+/* 悬浮文件图标 */
+.floating-myfile-icon {
+  position: absolute;
+  bottom: 30%;
+  left: 6%;
+  z-index: 100;
+  animation: float 8s ease-in-out infinite;
+  animation-delay: 2s;
+}
+
+.myfile-balloon {
+  width: 95px;
+  height: 95px;
+  filter: drop-shadow(0 4px 8px rgba(88, 86, 214, 0.3));
+  transition: all 0.3s ease;
+}
+
+.myfile-balloon:hover {
+  transform: scale(1.1);
+  filter: drop-shadow(0 6px 12px rgba(88, 86, 214, 0.4));
+}
+
+/* 悬浮书籍图标 */
+.floating-bookhand-icon {
+  position: absolute;
+  bottom: 25%;
+  right: 8%;
+  z-index: 100;
+  animation: float 6.5s ease-in-out infinite;
+  animation-delay: 3s;
+}
+
+.bookhand-balloon {
+  width: 105px;
+  height: 105px;
+  filter: drop-shadow(0 4px 8px rgba(52, 199, 89, 0.3));
+  transition: all 0.3s ease;
+}
+
+.bookhand-balloon:hover {
+  transform: scale(1.1);
+  filter: drop-shadow(0 6px 12px rgba(52, 199, 89, 0.4));
+}
+
+/* 悬浮动画 */
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+
+  25% {
+    transform: translateY(-10px) rotate(2deg);
+  }
+
+  50% {
+    transform: translateY(-5px) rotate(-1deg);
+  }
+
+  75% {
+    transform: translateY(-15px) rotate(1deg);
+  }
+}
+
+/* 响应式悬浮图标 */
 @media (max-width: 768px) {
+  .floating-code-icon {
+    top: 20%;
+    left: 5%;
+  }
+
+  .code-balloon {
+    width: 80px;
+    height: 80px;
+  }
+
+  .floating-todo-icon {
+    top: 15%;
+    right: 8%;
+  }
+
+  .todo-balloon {
+    width: 75px;
+    height: 75px;
+  }
+
+  .floating-myfile-icon {
+    bottom: 25%;
+    left: 4%;
+  }
+
+  .myfile-balloon {
+    width: 80px;
+    height: 80px;
+  }
+
+  .floating-bookhand-icon {
+    bottom: 20%;
+    right: 6%;
+  }
+
+  .bookhand-balloon {
+    width: 85px;
+    height: 85px;
+  }
+
+  /* 网格模式响应式 */
   .filter-content {
     width: 95%;
     padding: 20px;
@@ -2653,6 +2985,12 @@ function get3DStyle(idx) {
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: 15px;
     padding: 15px 0;
+    max-height: 400px;
+  }
+
+  .grid-slider-container {
+    padding: 15px 20px;
+    margin-top: 8px;
   }
 
   .grid-card {
@@ -2668,11 +3006,6 @@ function get3DStyle(idx) {
   .grid-desc {
     font-size: 0.9rem;
     margin-bottom: 15px;
-  }
-
-  .article-count {
-    padding: 8px 14px;
-    font-size: 0.8rem;
   }
 
   .folder-icon svg {
@@ -2705,9 +3038,56 @@ function get3DStyle(idx) {
 }
 
 @media (max-width: 480px) {
+  .floating-code-icon {
+    top: 15%;
+    left: 3%;
+  }
+
+  .code-balloon {
+    width: 65px;
+    height: 65px;
+  }
+
+  .floating-todo-icon {
+    top: 12%;
+    right: 5%;
+  }
+
+  .todo-balloon {
+    width: 60px;
+    height: 60px;
+  }
+
+  .floating-myfile-icon {
+    bottom: 20%;
+    left: 2%;
+  }
+
+  .myfile-balloon {
+    width: 65px;
+    height: 65px;
+  }
+
+  .floating-bookhand-icon {
+    bottom: 15%;
+    right: 4%;
+  }
+
+  .bookhand-balloon {
+    width: 70px;
+    height: 70px;
+  }
+
+  /* 网格模式响应式 */
   .category-grid {
     grid-template-columns: 1fr;
     gap: 12px;
+    max-height: 360px;
+  }
+
+  .grid-slider-container {
+    padding: 12px 15px;
+    margin-top: 6px;
   }
 
   .grid-card {
@@ -2723,11 +3103,6 @@ function get3DStyle(idx) {
   .grid-desc {
     font-size: 0.9rem;
     margin-bottom: 15px;
-  }
-
-  .article-count {
-    padding: 8px 14px;
-    font-size: 0.8rem;
   }
 
   .folder-icon svg {

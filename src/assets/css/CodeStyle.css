@@ -1,0 +1,73 @@
+
+:deep(.article-content pre[class*="language-sql"]),
+:deep(.article-content code[class*="language-sql"]) {
+  background: #fffbe6; /* warning风格浅黄色背景 */
+  color: #00618a;      /* MySQL Workbench 经典蓝色字体 */
+  font-family: "Fira Mono", "Consolas", "Menlo", monospace;
+}
+
+:deep(.article-content pre[class*="language-bash"]),
+:deep(.article-content code[class*="language-bash"]) {
+  background: #2C001E; /* Ubuntu terminal background */
+  color: #EEEEEC;      /* Ubuntu terminal foreground */
+}
+:deep(.article-content pre[class*="language-nginx"]),
+:deep(.article-content code[class*="language-nginx"]) {
+  background: #222; /* 深色背景，类似nginx官方文档 */
+  color: #b8e994;   /* nginx配置常用的绿色字体 */
+
+  font-family: "Fira Mono", "Consolas", "Menlo", monospace;
+
+
+}
+:deep(.article-content pre[class*="language-javascript"]),
+:deep(.article-content code[class*="language-javascript"]) {
+  background: #f5f5f7; /* Apple 浅色风格背景 */
+  color: #1d1d1f;      /* Apple 深色文字 */
+}
+
+:deep(.article-content pre[class*="language-python"]),
+:deep(.article-content code[class*="language-python"]) {
+  background: #183021; /* 墨绿色黑客风背景 */
+ 
+}
+:deep(.article-content pre[class*="language-java"]),
+:deep(.article-content code[class*="language-java"]) {
+  background: #0a2233;   /* 深海蓝色背景 */
+  color: #b8e1ff;        /* 柔和的浅蓝色字体 */
+  font-family: "Fira Mono", "Consolas", "Menlo", monospace;
+}
+
+:deep(.article-content pre[class*="language-markdown"]),
+:deep(.article-content code[class*="language-markdown"]) {
+  background: #fafbfc; /* Notion/GitHub风格浅灰白 */
+  color: #24292f;      /* GitHub/Apple深色正文 */
+  font-family: "SF Mono", "Fira Mono", "Consolas", "Menlo", monospace;
+
+}
+
+:deep(.article-content pre[class*="language-error"]),
+:deep(.article-content code[class*="language-error"]) {
+  background: #802f2f; 
+  color: #fafafa;     
+  font-weight: 900;
+  font-family: "SF Mono", "Fira Mono", "Consolas", "Menlo", monospace;
+}
+
+/* 文件结构 - Windows 文件夹风格 */
+:deep(.article-content pre[class*="language-fs"]),
+:deep(.article-content code[class*="language-fs"]) {
+  background: #f3f6fd; 
+  color: #0a4619;      
+  font-weight: 900;
+  font-family: "Segoe UI Mono", "SF Mono", "Fira Mono", "Consolas", "Menlo", monospace;
+  border-radius: 6px;
+}
+
+:deep(.article-content pre:not([class*="language-"])),
+:deep(.article-content code:not([class*="language-"])) {
+  background: #dddde0; /* 你可以自定义为你想要的颜色 */
+  font-family: "Fira Mono", "Consolas", "Menlo", monospace;
+  font-weight: 900;
+  font-size: 16px;
+}

@@ -254,7 +254,7 @@ onUnmounted(() => {
   font-weight: 800;
   line-height: 1.1;
   margin-bottom: 9rem;
-  color: #cbd811;
+  color: #ffd300;
 }
 
 .title-line {

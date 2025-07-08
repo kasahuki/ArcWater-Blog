@@ -4,7 +4,7 @@ import CategoryPage from '../views/CategoryPage.vue'
 import ArticleDetail from '../views/ArticleDetail.vue'
 import Login from '../views/Login.vue'
 import MusicShow from '../views/MusicShow.vue'
-
+import News from '../views/News.vue'
 const routes = [
   {
     path: '/',
@@ -37,6 +37,11 @@ const routes = [
     path: '/music',
     name: 'Music',
     component: MusicShow
+  },
+  {
+    path: '/news',
+    name: 'News',
+    component: News
   }
 ]
 

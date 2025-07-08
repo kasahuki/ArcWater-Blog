@@ -1,5 +1,7 @@
 <template>
-  <div class="article-detail">
+  <ArticleDetailLoading v-if="loading" />
+  <div class="article-detail" v-else>
+
     <el-row :gutter="20">
       <!-- 文章内容 -->
       <el-col :xs="24" :md="18">
@@ -245,6 +247,7 @@
 </template>
 
 <script setup>
+// #region 引入依赖
 import { ref, onMounted, nextTick, onUnmounted, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { Share, ArrowUp, Menu, ArrowDown } from '@element-plus/icons-vue'
@@ -266,35 +269,56 @@ import MoreButton from '@/components/MoreButton.vue'
 import TocTreeNode from '../components/TocTreeNode.vue'
 // 添加 mermaid 支持
 import mermaid from 'mermaid'
+import ArticleDetailLoading from '@/components/ArticleDetailLoading.vue'
+// #endregion
 
-//#region 状态变量定义
+// #region Mermaid初始化
+mermaid.initialize({
+  startOnLoad: false, // 不自动开始渲染
+  theme: 'default',
+  flowchart: {
+    useMaxWidth: true,
+    htmlLabels: true
+  },
+  sequence: {
+    useMaxWidth: true
+  },
+  gantt: {
+    useMaxWidth: true
+  }
+});
+// #endregion
+
+// #region 状态变量定义
+const loading = ref(true)
 const route = useRoute()
 const articleId = ref(route.params.id || 1)
 const categoryName = ref('')
-const tocItems = ref([]) // 存储目录项
+const tocItems = ref([])
+// #endregion
 
-// 新增：文章字数和预计阅读时间
+// #region 文章字数/阅读时间计算
 const articleWordCount = computed(() => {
-  // 去除 HTML 标签，统计纯文本字数
   if (!article.value.content) return 0
   const div = document.createElement('div')
   div.innerHTML = article.value.content
   return div.textContent.replace(/\s/g, '').length
 })
 const articleReadTime = computed(() => {
-  // 500字/分钟（更快的阅读速度）
   const min = Math.max(1, Math.round(articleWordCount.value / 500))
   return min
 })
+// #endregion
 
-// 添加全屏代码相关状态
+// #region 全屏代码相关状态
 const isFullscreenActive = ref(false)
 const currentCode = ref('')
 const currentLanguage = ref('plaintext')
 const fullscreenCodeBlock = ref(null)
 const fullscreenWhiteBg = ref(false)
+// #endregion
 
-// 初始化文章数据结构
+// #region 文章/相关文章/热门文章数据
 const article = ref({
   title: '',
   content: '',
@@ -304,33 +328,23 @@ const article = ref({
   categoryId: '',
   tags: []
 })
-
-// 相关文章
 const relatedArticles = ref([])
-
-// 热门文章
 const popularArticles = ref([])
+// #endregion
 
+// #region 图片/mermaid预览相关方法
 const showShareCapsule = ref(false)
 const shareBtnRef = ref(null)
 const showImageViewer = ref(false)
 const previewImageUrl = ref('')
-
-// mermaid 全屏预览相关状态
 const showMermaidViewer = ref(false)
 const mermaidPreviewUrl = ref('')
-
-// mermaid 源码弹窗相关状态
 const showMermaidSourceDialog = ref(false)
 const mermaidSourceCode = ref('')
-
-// 图片预览方法
 const openImagePreview = (url) => {
   previewImageUrl.value = url
   showImageViewer.value = true
 }
-
-// mermaid 全屏预览方法
 const openMermaidPreview = (mermaidCode) => {
   // 清理之前的 URL
   if (mermaidPreviewUrl.value) {
@@ -388,8 +402,6 @@ const openMermaidPreview = (mermaidCode) => {
     document.body.removeChild(tempContainer)
   }
 }
-
-// 关闭 mermaid 预览
 const closeMermaidViewer = () => {
   showMermaidViewer.value = false
   // 清理 URL
@@ -398,20 +410,14 @@ const closeMermaidViewer = () => {
     mermaidPreviewUrl.value = ''
   }
 }
-
-// 显示 mermaid 源码
 const showMermaidSource = (mermaidCode) => {
   mermaidSourceCode.value = mermaidCode
   showMermaidSourceDialog.value = true
 }
-
-// 关闭 mermaid 源码弹窗
 const closeMermaidSourceDialog = () => {
   showMermaidSourceDialog.value = false
   mermaidSourceCode.value = ''
 }
-
-// 复制 mermaid 源码
 const copyMermaidSource = () => {
   try {
     navigator.clipboard.writeText(mermaidSourceCode.value).then(() => {
@@ -425,26 +431,20 @@ const copyMermaidSource = () => {
     showToast('复制失败', 'error')
   }
 }
-
-// mermaid 源码弹窗相关方法
 const mermaidSourceCodeElement = ref(null)
-
-
-// 滚动到顶部
 const scrollMermaidToTop = () => {
   if (mermaidSourceCodeElement.value) {
     mermaidSourceCodeElement.value.scrollTop = 0
   }
 }
-
-// 滚动到底部
 const scrollMermaidToBottom = () => {
   if (mermaidSourceCodeElement.value) {
     mermaidSourceCodeElement.value.scrollTop = mermaidSourceCodeElement.value.scrollHeight
   }
 }
+// #endregion
 
-// 移除按钮，改为双击图片放大
+// #region 文章内容变化监听
 const addImagePreviewDblClick = () => {
   const imgs = document.querySelectorAll('.article-content img')
   imgs.forEach(img => {
@@ -461,18 +461,18 @@ const addImagePreviewDblClick = () => {
     }
   })
 }
-
-// 监听文章内容变化，添加双击事件
 watch(() => article.value.content, () => {
   nextTick(() => {
     addImagePreviewDblClick()
+    setTimeout(() => {
+      enhancedHighlightAll()
+      enhancedRenderMermaid()
+    }, 50)
   })
 })
+// #endregion
 
-//#endregion
-
-//#region Markdown配置与处理
-// 恢复原始marked配置，移除自定义渲染器
+// #region Markdown配置与处理
 marked.setOptions({
   breaks: true,
   gfm: true,
@@ -481,7 +481,6 @@ marked.setOptions({
   sanitize: false,
   highlight: function (code, lang) {
     if (lang === 'mermaid') {
-      // Mermaid 代码块直接返回原始代码，不做高亮
       return code
     }
     if (Prism.languages[lang]) {
@@ -494,14 +493,10 @@ marked.setOptions({
     return code
   }
 })
-
-// 支持==高亮==语法
 const highlightMarkdown = (md) => {
   // 只处理非代码块内的==内容==
   return md.replace(/==([^=]+)==/g, '<span class="md-highlight">$1</span>');
 }
-
-// 处理文章内容，手动添加按钮到代码块
 const processArticleContent = (htmlContent) => {
   if (!htmlContent) return '';
 
@@ -545,8 +540,14 @@ const processArticleContent = (htmlContent) => {
       `;
     }
 
+    // 如果是 link 代码块，解析为可点击高亮链接
+    if (language === 'link') {
+      // ... existing code ...
+    }
+
+    // 普通代码块，增加收缩按钮
     return `
-      <div class="code-wrapper">
+      <div class="code-wrapper" id="wrap-${codeId}">
         <div class="code-actions">
           <button class="code-btn copy-btn" onclick="window._copyCode('${codeId}')" title="复制">
             <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
@@ -559,6 +560,12 @@ const processArticleContent = (htmlContent) => {
               <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"></path>
             </svg>
           </button>
+          <button class="code-btn collapse-btn" onclick="window._toggleCollapseCode('${codeId}')" title="收缩/展开">
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
+              <line x1="4" y1="10" x2="20" y2="10"/>
+              <line x1="4" y1="14" x2="20" y2="14"/>
+            </svg>
+          </button>
         </div>
         <textarea id="${codeId}" style="display:none">${codeContent}</textarea>
         <pre><code${codeClass}${extraClass}>${code}</code></pre>
@@ -566,10 +573,9 @@ const processArticleContent = (htmlContent) => {
     `;
   });
 }
-//#endregion
+// #endregion
 
-//#region 文章标题和目录处理
-// 处理标题提取
+// #region 目录与标题处理
 const extractHeaders = (content) => {
   const headers = []
   const lines = content.split('\n')
@@ -624,10 +630,7 @@ const extractHeaders = (content) => {
   }
   return headers
 }
-
-// 顶部导航栏高度（按实际情况调整）
-const NAVBAR_HEIGHT = 64; // px
-
+const NAVBAR_HEIGHT = 64
 const scrollToHeaderWithOffset = (id) => {
   const element = document.getElementById(id);
   if (element) {
@@ -638,19 +641,15 @@ const scrollToHeaderWithOffset = (id) => {
     window.scrollTo({ top, behavior: 'smooth' });
   }
 };
-
 const handleTocClick = (id) => {
   scrollToHeaderWithOffset(id);
 };
-
 const handleDrawerTocClick = (id) => {
   closeTocDrawer();
   nextTick(() => {
     scrollToHeaderWithOffset(id);
   });
 };
-
-// 处理滚动高亮
 const handleScroll = () => {
   if (tocItems.value.length === 0) return
 
@@ -676,10 +675,9 @@ const handleScroll = () => {
     }
   }
 }
-//#endregion
+// #endregion
 
-//#region 代码块复制和全屏功能
-// 添加处理函数
+// #region 代码块复制/全屏功能
 const copyCode = (codeText) => {
   try {
     navigator.clipboard.writeText(codeText).then(() => {
@@ -693,11 +691,9 @@ const copyCode = (codeText) => {
     showToast('复制失败', 'error')
   }
 }
-
 const copyFullscreenCode = () => {
   copyCode(currentCode.value)
 }
-
 const showFullscreen = (codeText, language) => {
   document.body.style.overflow = 'hidden' // 防止滚动
   currentCode.value = codeText
@@ -720,17 +716,13 @@ const showFullscreen = (codeText, language) => {
     }
   })
 }
-
 const closeFullscreen = () => {
   isFullscreenActive.value = false
   document.body.style.overflow = '' // 恢复滚动
 }
-
 const toggleFullscreenBg = () => {
   fullscreenWhiteBg.value = !fullscreenWhiteBg.value
 }
-
-// 显示提示信息
 const showToast = (message, type = 'success') => {
   // 检查是否已有toast
   const existingToast = document.querySelector('.code-toast')
@@ -752,8 +744,6 @@ const showToast = (message, type = 'success') => {
     setTimeout(() => document.body.removeChild(toast), 300)
   }, 2000)
 }
-
-// 初始化按钮事件
 const initCodeButtons = () => {
   // 设置全局复制函数
   window._copyCode = (codeId) => {
@@ -788,11 +778,18 @@ const initCodeButtons = () => {
       showMermaidSource(mermaidCode);
     }
   };
-}
-//#endregion
 
-//#region 数据获取和加载
-// 获取文章详情
+  // 设置全局收缩/展开函数
+  window._toggleCollapseCode = (codeId) => {
+    const wrapper = document.getElementById('wrap-' + codeId);
+    if (wrapper) {
+      wrapper.classList.toggle('collapsed');
+    }
+  };
+}
+// #endregion
+
+// #region 数据获取与加载
 const getArticleDetail = async () => {
   try {
     const res = await articleDetailService(articleId.value)
@@ -822,11 +819,12 @@ const getArticleDetail = async () => {
 
       // 在下一个 tick 中初始化
       nextTick(() => {
-        Prism.highlightAll()
-        initCodeButtons()
+        // 确保DOM完全渲染后再执行代码高亮
         setTimeout(() => {
-          renderMermaidBlocks();
-        }, 50); // 50ms 够用，必要时可调大
+          enhancedHighlightAll()
+          initCodeButtons()
+          enhancedRenderMermaid();
+        }, 100); // 增加延迟确保DOM完全渲染
       })
     }
     article.value = res.data
@@ -834,7 +832,6 @@ const getArticleDetail = async () => {
     console.error('获取文章详情失败:', error)
   }
 }
-
 const getCategoryName = async () => {
   // 添加categoryId检查，避免undefined
   if (!article.value.categoryId) {
@@ -851,8 +848,6 @@ const getCategoryName = async () => {
     categoryName.value = '未分类'
   }
 }
-
-// 获取相关文章
 const getRelatedArticles = async () => {
   try {
     // 添加categoryId检查
@@ -878,8 +873,6 @@ const getRelatedArticles = async () => {
     relatedArticles.value = []
   }
 }
-
-// 获取热门文章
 const getHotArticles = async () => {
   try {
     const res = await hotArticleService(8)
@@ -893,9 +886,9 @@ const getHotArticles = async () => {
     popularArticles.value = []
   }
 }
-
 const loadData = async () => {
   try {
+    loading.value = true
     // 首先获取文章详情
     await getArticleDetail()
 
@@ -909,6 +902,20 @@ const loadData = async () => {
     }
   } catch (error) {
     console.error('加载数据失败:', error)
+  } finally {
+    loading.value = false
+
+    // loading完成后，确保代码高亮和mermaid渲染正常工作
+    nextTick(() => {
+      setTimeout(() => {
+        enhancedHighlightAll()
+        enhancedRenderMermaid()
+        // 再次检查mermaid渲染状态
+        setTimeout(() => {
+          checkMermaidRenderStatus()
+        }, 300)
+      }, 200)
+    })
   }
 }
 watch(() => route.params.id, async (newId) => {
@@ -935,10 +942,9 @@ watch(() => route.params.id, async (newId) => {
     await loadData()
   }
 }, { immediate: true })
+// #endregion
 
-//#endregion
-
-//#region 生命周期钩子
+// #region 生命周期钩子
 onMounted(() => {
   // 加载数据
   loadData()
@@ -947,8 +953,6 @@ onMounted(() => {
   window.addEventListener('scroll', handleScroll)
   window.addEventListener('scroll', handleFloatBtnShow)
 })
-
-// 在组件卸载时清理
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll);
   window.removeEventListener('scroll', handleFloatBtnShow);
@@ -965,22 +969,17 @@ onUnmounted(() => {
   }
   document.removeEventListener('click', handleCapsuleOutsideClick)
 });
-//#endregion
+// #endregion
 
-//#region 格式化函数
-// 格式化相对时间
+// #region 格式化函数
 const formatRelativeTime = (dateTime) => {
   if (!dateTime) return '未知时间'
   return dayjs(dateTime).format('YYYY-MM-DD HH:mm')
 }
-
-// 格式化时间
 const formatTimeAgo = (dateTime) => {
   if (!dateTime) return '未知时间'
   return dayjs(dateTime).format('YYYY-MM-DD HH:mm')
 }
-
-// 格式化阅读次数
 const formatNumber = (clickTimes) => {
   if (clickTimes >= 1000000) {
     return (clickTimes / 1000000).toFixed(2) + 'M'
@@ -990,38 +989,25 @@ const formatNumber = (clickTimes) => {
     return clickTimes.toString()
   }
 }
-//#endregion
+// #endregion
 
-// 回到顶部方法
+// #region 页面交互（回到顶部、目录抽屉、分享等）
 const scrollToTop = () => {
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
-
-// 目录抽屉显示状态
 const showTocDrawer = ref(false)
 const openTocDrawer = () => { showTocDrawer.value = true }
 const closeTocDrawer = () => { showTocDrawer.value = false }
-
-// 点击遮罩关闭目录抽屉
 const handleDrawerMaskClick = (e) => {
   // 只在点击遮罩本身时关闭
   if (e.target.classList.contains('toc-drawer-mask')) closeTocDrawer()
 }
-
-// 页面滚动到一半才显示按钮
 const showFloatBtns = ref(false)
 const handleFloatBtnShow = () => {
   const scrollY = window.scrollY || document.documentElement.scrollTop
   const docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight
   showFloatBtns.value = scrollY > docHeight / 2
 }
-
-// 在 <script setup> 里添加
-const goToChatGPT = () => {
-  const url = `https://chat.openai.com/?code=${encodeURIComponent(currentCode.value)}`
-  window.open(url, '_blank')
-}
-
 const toggleShareCapsule = () => {
   showShareCapsule.value = !showShareCapsule.value
   if (showShareCapsule.value) {
@@ -1032,7 +1018,6 @@ const toggleShareCapsule = () => {
     document.removeEventListener('click', handleCapsuleOutsideClick)
   }
 }
-
 const handleCapsuleOutsideClick = (e) => {
   // 如果点击的不是分享按钮或胶囊本身，则关闭
   if (
@@ -1044,7 +1029,6 @@ const handleCapsuleOutsideClick = (e) => {
     document.removeEventListener('click', handleCapsuleOutsideClick)
   }
 }
-
 const copyShareLink = () => {
   const url = window.location.origin + '/article/' + articleId.value
   navigator.clipboard.writeText(url).then(() => {
@@ -1055,7 +1039,6 @@ const copyShareLink = () => {
   showShareCapsule.value = false
   document.removeEventListener('click', handleCapsuleOutsideClick)
 }
-
 const downloadCurrentHtml = () => {
   const html = document.documentElement.outerHTML
   const blob = new Blob([html], { type: 'text/html' })
@@ -1069,8 +1052,9 @@ const downloadCurrentHtml = () => {
   showShareCapsule.value = false
   document.removeEventListener('click', handleCapsuleOutsideClick)
 }
+// #endregion
 
-// 目录树形结构转换
+// #region 目录树结构与展开折叠
 const buildTocTree = (flatList) => {
   const root = []
   const stack = []
@@ -1096,8 +1080,6 @@ const tocTree = ref([])
 watch(tocItems, (newVal) => {
   tocTree.value = buildTocTree(newVal)
 }, { immediate: true })
-
-// 一键展开/折叠
 const expandAllToc = () => {
   const expand = (nodes) => nodes.forEach(n => { n.isCollapsed = false; if (n.children) expand(n.children) })
   expand(tocTree.value)
@@ -1106,28 +1088,110 @@ const collapseAllToc = () => {
   const collapse = (nodes) => nodes.forEach(n => { if (n.children && n.children.length) n.isCollapsed = true; if (n.children) collapse(n.children) })
   collapse(tocTree.value)
 }
+// #endregion
 
-// 渲染 mermaid 代码块
+// #region Mermaid渲染相关
 const renderMermaidBlocks = () => {
   // 查找所有未渲染的 mermaid 容器
   const mermaidContainers = document.querySelectorAll('.mermaid-wrapper .mermaid:not([data-mermaid-rendered])');
+  console.log('找到', mermaidContainers.length, '个mermaid容器需要渲染');
+
   mermaidContainers.forEach((container, idx) => {
     container.setAttribute('data-mermaid-rendered', 'true');
     const code = container.textContent;
 
     // 渲染
     try {
+      // 清理之前的渲染结果
+      container.innerHTML = code;
+
+      // 重新渲染
       mermaid.init(undefined, container);
+      console.log(`Mermaid ${idx + 1} 渲染成功`);
     } catch (e) {
-      container.innerHTML = '<pre style="color:red">Mermaid 渲染失败: ' + e + '</pre>';
+      console.error(`Mermaid ${idx + 1} 渲染失败:`, e);
+      container.innerHTML = `
+        <div style="color:red; padding: 10px; border: 1px solid #ff4444; border-radius: 4px; background: #fff5f5;">
+          <strong>Mermaid 渲染失败:</strong><br>
+          ${e.message || e}<br>
+          <small>原始代码: ${code.substring(0, 100)}${code.length > 100 ? '...' : ''}</small>
+        </div>
+      `;
     }
   });
 };
+const enhancedRenderMermaid = () => {
+  // 确保mermaid容器存在
+  const mermaidContainers = document.querySelectorAll('.mermaid-wrapper .mermaid');
+  if (mermaidContainers.length > 0) {
+    try {
+      // 检查容器是否已经完全渲染到DOM中
+      const isReady = Array.from(mermaidContainers).every(container => {
+        return container.offsetHeight > 0 && container.offsetWidth > 0;
+      });
+
+      if (isReady) {
+        renderMermaidBlocks();
+        console.log('Mermaid渲染执行成功，共处理', mermaidContainers.length, '个图表');
+      } else {
+        // 如果容器还未完全渲染，延迟重试
+        console.log('Mermaid容器未完全准备好，延迟重试...');
+        setTimeout(() => {
+          enhancedRenderMermaid();
+        }, 100);
+      }
+    } catch (error) {
+      console.error('Mermaid渲染执行失败:', error);
+    }
+  } else {
+    console.warn('未找到需要渲染的Mermaid图表');
+  }
+};
+const checkMermaidRenderStatus = () => {
+  const mermaidContainers = document.querySelectorAll('.mermaid-wrapper .mermaid');
+  const renderedContainers = document.querySelectorAll('.mermaid-wrapper .mermaid svg');
+
+  console.log(`Mermaid状态检查: 总容器 ${mermaidContainers.length} 个, 已渲染 ${renderedContainers.length} 个`);
+
+  if (mermaidContainers.length > 0 && renderedContainers.length < mermaidContainers.length) {
+    console.log('检测到未完全渲染的Mermaid图表，重新渲染...');
+    enhancedRenderMermaid();
+  }
+};
+// #endregion
+
+// #region 代码高亮相关
+const enhancedHighlightAll = () => {
+  // 确保代码块元素存在
+  const codeBlocks = document.querySelectorAll('pre code[class*="language-"]');
+  if (codeBlocks.length > 0) {
+    try {
+      Prism.highlightAll();
+      console.log('代码高亮执行成功，共处理', codeBlocks.length, '个代码块');
+    } catch (error) {
+      console.error('代码高亮执行失败:', error);
+    }
+  } else {
+    console.warn('未找到需要高亮的代码块');
+  }
+};
+// #endregion
 </script>
 <style scoped>
 @import "@/assets/css/ArticleDetail.css";
+@import "@/assets/css/CodeStyle.css";
 
 :deep(.el-image-viewer__wrapper) {
   z-index: 2100;
+}
+
+/* 自定义代码块样式 */
+:deep(.code-wrapper.collapsed pre),
+:deep(.code-wrapper.collapsed code) {
+  max-height: 1.8em !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+  display: block !important;
 }
 </style>

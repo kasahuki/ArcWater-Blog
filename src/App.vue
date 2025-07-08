@@ -64,8 +64,9 @@ body {
 
 .main-content {
   flex: 1;
-  padding: 20px;
+
 }
+
 
 .footer {
   background-color: #fff;

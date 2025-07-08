@@ -29,7 +29,7 @@
         </div>
       </el-sub-menu>
 
-      <el-menu-item index="/about">About</el-menu-item>
+      <el-menu-item index="/news">News</el-menu-item>
     </el-menu>
 
 
